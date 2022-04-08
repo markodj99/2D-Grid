@@ -16,6 +16,8 @@ namespace Projekat
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region Fields
+
         private double _noviX = 0, _noviY = 0;
         private double _maxX = double.MinValue, _maxY = double.MinValue;
         private double _minX = double.MaxValue, _minY = double.MaxValue;
@@ -24,10 +26,15 @@ namespace Projekat
         private List<SwitchEntity> _switchEntities = new List<SwitchEntity>(2282);
         private List<LineEntity> _lineEntities = new List<LineEntity>(2336);
 
+        #endregion
+
+        #region Constructor
         public MainWindow()
         {
             InitializeComponent();
         }
+
+        #endregion
 
         #region LoadModel
 
