@@ -8,7 +8,7 @@
         Title="Projekat 1" Height="650" Width="1000">
     <DockPanel>
         <Menu x:Name="menu" Height="30 " DockPanel.Dock="Top" Padding="0,15,0,0">
-            <MenuItem Header="Test" Width="100"/>
+            <MenuItem Header="Load Model" Width="100" Click="MenuItem_Click"/>
         </Menu>
         <Slider x:Name="slider" Minimum=".1" Maximum="10" Value="1" DockPanel.Dock="Top"/>
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
