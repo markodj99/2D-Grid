@@ -43,7 +43,7 @@ namespace Projekat
 
             FindMaxMinX_Y();
 
-            TranslatePoints();
+            PaintPoints();
         }
 
         private void Substations(XmlDocument xmlDoc)
@@ -64,8 +64,6 @@ namespace Projekat
                 ToLatLon(sub.X, sub.Y, 34, out _noviX, out _noviY);
                 sub.X = _noviX;
                 sub.Y = _noviY;
-                sub.X -= 45.0f;
-                sub.Y -= 19.0f;
                 sub.X *= 1000000000.0f;
                 sub.Y *= 1000000000.0f;
                 _substationEntities.Add(sub);
@@ -89,8 +87,6 @@ namespace Projekat
                 ToLatLon(nodeEntity.X, nodeEntity.Y, 34, out _noviX, out _noviY);
                 nodeEntity.X = _noviX;
                 nodeEntity.Y = _noviY;
-                nodeEntity.X -= 45.0f;
-                nodeEntity.Y -= 19.0f;
                 nodeEntity.X *= 1000000000.0f;
                 nodeEntity.Y *= 1000000000.0f;
                 _nodeEntities.Add(nodeEntity);
@@ -115,8 +111,6 @@ namespace Projekat
                 ToLatLon(switchobj.X, switchobj.Y, 34, out _noviX, out _noviY);
                 switchobj.X = _noviX;
                 switchobj.Y = _noviY;
-                switchobj.X -= 45.0f;
-                switchobj.Y -= 19.0f;
                 switchobj.X *= 1000000000.0f;
                 switchobj.Y *= 1000000000.0f;
                 _switchEntities.Add(switchobj);
@@ -154,8 +148,6 @@ namespace Projekat
                     ToLatLon(p.X, p.Y, 34, out _noviX, out _noviY);
                     p.X = _noviX;
                     p.Y = _noviY;
-                    p.X -= 45.0f;
-                    p.Y -= 19.0f;
                     p.X *= 1000000000.0f;
                     p.Y *= 1000000000.0f;
                     l.Vertices.Add(p);
@@ -244,36 +236,85 @@ namespace Projekat
             }
         }
 
-        private void TranslatePoints()
+        private void PaintPoints()
         {
             _maxX -= _minX;
             _maxY -= _minY;
 
-            double ratioX = OnlyCanvas.Width / _maxX;
-            double ratioY = OnlyCanvas.Height / _maxY;
+            double ratioX =  _maxX / OnlyCanvas.Width;
+            double ratioY =  _maxY / OnlyCanvas.Height;
 
             foreach (var s in _substationEntities)
             {
 
                 Rectangle r = new Rectangle()
                 {
-                    Width = 5, Height = 5, Fill = Brushes.Black, Stroke = Brushes.Red,
+                    Width = 5,
+                    Height = 5,
+                    Fill = Brushes.Black,
+                    Stroke = Brushes.Red,
                     ToolTip = new ToolTip()
                     {
-                        Content = s.Name
-                        //marker.ToolTipText = "Substation\nID: " + sub.Id + "  Name: " + sub.Name;
-                        //marker.ToolTip.Fill = Brushes.Black;
-                        //marker.ToolTip.Foreground = Brushes.White;
-                        //marker.ToolTip.Stroke = Pens.Black;
-                        //marker.ToolTip.TextPadding = new Size(20, 20);
+                        Content = s.Name,
+                        Foreground = Brushes.Black
                     }
                 };
 
                 s.X -= _minX;
                 s.Y -= _minY;
 
-                Canvas.SetLeft(r, s.X * ratioX);
-                Canvas.SetTop(r, s.Y * ratioY);
+                Canvas.SetLeft(r, s.X / ratioX);
+                Canvas.SetBottom(r, s.Y / ratioY);
+
+                OnlyCanvas.Children.Add(r);
+            }
+
+            foreach (var n in _nodeEntities)
+            {
+
+                Rectangle r = new Rectangle()
+                {
+                    Width = 5,
+                    Height = 5,
+                    Fill = Brushes.White,
+                    Stroke = Brushes.Red,
+                    ToolTip = new ToolTip()
+                    {
+                        Content = n.Name,
+                        Foreground = Brushes.Black
+                    }
+                };
+
+                n.X -= _minX;
+                n.Y -= _minY;
+
+                Canvas.SetLeft(r, n.X / ratioX);
+                Canvas.SetBottom(r, n.Y / ratioY);
+
+                OnlyCanvas.Children.Add(r);
+            }
+
+            foreach (var s in _switchEntities)
+            {
+
+                Rectangle r = new Rectangle()
+                {
+                    Width = 5,
+                    Height = 5,
+                    Fill = Brushes.Green,
+                    Stroke = Brushes.Red,
+                    ToolTip = new ToolTip()
+                    {
+                        Content = s.Name,
+                        Foreground = Brushes.Black
+                    }
+                };
+
+                s.X -= _minX;
+                s.Y -= _minY;
+
+                Canvas.SetLeft(r, s.X / ratioX);
+                Canvas.SetBottom(r, s.Y / ratioY);
 
                 OnlyCanvas.Children.Add(r);
             }
