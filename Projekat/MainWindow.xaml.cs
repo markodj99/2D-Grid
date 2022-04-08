@@ -42,7 +42,6 @@ namespace Projekat
             Routes(xmlDoc);
 
             FindMaxMinX_Y();
-
             PaintPoints();
         }
 
@@ -246,7 +245,6 @@ namespace Projekat
 
             foreach (var s in _substationEntities)
             {
-
                 Rectangle r = new Rectangle()
                 {
                     Width = 5,
