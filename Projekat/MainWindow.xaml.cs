@@ -19,7 +19,6 @@ namespace Projekat
         private double _noviX = 0, _noviY = 0;
         private double _maxX = double.MinValue, _maxY = double.MinValue;
         private double _minX = double.MaxValue, _minY = double.MaxValue;
-        private int switchCount = 0;
         private List<SubstationEntity> _substationEntities = new List<SubstationEntity>(67);
         private List<NodeEntity> _nodeEntities = new List<NodeEntity>(2043);
         private List<SwitchEntity> _switchEntities = new List<SwitchEntity>(2282);
@@ -49,23 +48,26 @@ namespace Projekat
 
         private void Substations(XmlDocument xmlDoc)
         {
-            SubstationEntity sub = new SubstationEntity();
+            
             XmlNodeList nodeList = xmlDoc.DocumentElement.SelectNodes("/NetworkModel/Substations/SubstationEntity");
 
             foreach (XmlNode node in nodeList)
             {
-                sub.Id = long.Parse(node.SelectSingleNode("Id").InnerText);
-                sub.Name = node.SelectSingleNode("Name").InnerText;
-                sub.X = double.Parse(node.SelectSingleNode("X").InnerText);
-                sub.Y = double.Parse(node.SelectSingleNode("Y").InnerText);
+                SubstationEntity sub = new SubstationEntity()
+                {
+                    Id = long.Parse(node.SelectSingleNode("Id").InnerText),
+                    Name = node.SelectSingleNode("Name").InnerText,
+                    X = double.Parse(node.SelectSingleNode("X").InnerText),
+                    Y = double.Parse(node.SelectSingleNode("Y").InnerText)
+                };
 
                 ToLatLon(sub.X, sub.Y, 34, out _noviX, out _noviY);
                 sub.X = _noviX;
                 sub.Y = _noviY;
                 sub.X -= 45.0f;
                 sub.Y -= 19.0f;
-                sub.X *= 1000000.0f;
-                sub.Y *= 1000000.0f;
+                sub.X *= 1000000000.0f;
+                sub.Y *= 1000000000.0f;
                 _substationEntities.Add(sub);
             }
         }
@@ -73,67 +75,73 @@ namespace Projekat
         public void Nodes(XmlDocument xmlDoc)
         {
             XmlNodeList nodeList = xmlDoc.DocumentElement.SelectNodes("/NetworkModel/Nodes/NodeEntity");
-            NodeEntity nodeEntity = new NodeEntity();
 
             foreach (XmlNode node in nodeList)
             {
-                nodeEntity.Id = long.Parse(node.SelectSingleNode("Id").InnerText);
-                nodeEntity.Name = node.SelectSingleNode("Name").InnerText;
-                nodeEntity.X = double.Parse(node.SelectSingleNode("X").InnerText);
-                nodeEntity.Y = double.Parse(node.SelectSingleNode("Y").InnerText);
+                NodeEntity nodeEntity = new NodeEntity()
+                {
+                    Id = long.Parse(node.SelectSingleNode("Id").InnerText),
+                    Name = node.SelectSingleNode("Name").InnerText,
+                    X = double.Parse(node.SelectSingleNode("X").InnerText),
+                    Y = double.Parse(node.SelectSingleNode("Y").InnerText)
+                };
 
                 ToLatLon(nodeEntity.X, nodeEntity.Y, 34, out _noviX, out _noviY);
                 nodeEntity.X = _noviX;
                 nodeEntity.Y = _noviY;
                 nodeEntity.X -= 45.0f;
                 nodeEntity.Y -= 19.0f;
-                nodeEntity.X *= 1000000.0f;
-                nodeEntity.Y *= 1000000.0f;
+                nodeEntity.X *= 1000000000.0f;
+                nodeEntity.Y *= 1000000000.0f;
                 _nodeEntities.Add(nodeEntity);
             }
         }
 
         public void Switches(XmlDocument xmlDoc)
         {
-            SwitchEntity switchobj = new SwitchEntity();
             XmlNodeList nodeList = xmlDoc.DocumentElement.SelectNodes("/NetworkModel/Switches/SwitchEntity");
 
             foreach (XmlNode node in nodeList)
             {
-                switchobj.Id = long.Parse(node.SelectSingleNode("Id").InnerText);
-                switchobj.Name = node.SelectSingleNode("Name").InnerText;
-                switchobj.X = double.Parse(node.SelectSingleNode("X").InnerText);
-                switchobj.Y = double.Parse(node.SelectSingleNode("Y").InnerText);
-                switchobj.Status = node.SelectSingleNode("Status").InnerText;
+                SwitchEntity switchobj = new SwitchEntity()
+                {
+                    Id = long.Parse(node.SelectSingleNode("Id").InnerText),
+                    Name = node.SelectSingleNode("Name").InnerText,
+                    X = double.Parse(node.SelectSingleNode("X").InnerText),
+                    Y = double.Parse(node.SelectSingleNode("Y").InnerText),
+                    Status = node.SelectSingleNode("Status").InnerText
+                };
 
                 ToLatLon(switchobj.X, switchobj.Y, 34, out _noviX, out _noviY);
                 switchobj.X = _noviX;
                 switchobj.Y = _noviY;
                 switchobj.X -= 45.0f;
                 switchobj.Y -= 19.0f;
-                switchobj.X *= 1000000.0f;
-                switchobj.Y *= 1000000.0f;
+                switchobj.X *= 1000000000.0f;
+                switchobj.Y *= 1000000000.0f;
                 _switchEntities.Add(switchobj);
             }
         }
 
         public void Routes(XmlDocument xmlDoc)
         {
-            LineEntity l = new LineEntity();
             XmlNodeList nodeList = xmlDoc.DocumentElement.SelectNodes("/NetworkModel/Lines/LineEntity");
 
             foreach (XmlNode node in nodeList)
             {
-                l.Id = long.Parse(node.SelectSingleNode("Id").InnerText);
-                l.Name = node.SelectSingleNode("Name").InnerText;
-                l.IsUnderground = node.SelectSingleNode("IsUnderground").InnerText.Equals("true");
-                l.R = float.Parse(node.SelectSingleNode("R").InnerText);
-                l.ConductorMaterial = node.SelectSingleNode("ConductorMaterial").InnerText;
-                l.LineType = node.SelectSingleNode("LineType").InnerText;
-                l.ThermalConstantHeat = long.Parse(node.SelectSingleNode("ThermalConstantHeat").InnerText);
-                l.FirstEnd = long.Parse(node.SelectSingleNode("FirstEnd").InnerText);
-                l.SecondEnd = long.Parse(node.SelectSingleNode("SecondEnd").InnerText);
-                l.Vertices = new List<Point>();
+                LineEntity l = new LineEntity()
+                {
+                    Id = long.Parse(node.SelectSingleNode("Id").InnerText),
+                    Name = node.SelectSingleNode("Name").InnerText,
+                    IsUnderground = node.SelectSingleNode("IsUnderground").InnerText.Equals("true"),
+                    R = float.Parse(node.SelectSingleNode("R").InnerText),
+                    ConductorMaterial = node.SelectSingleNode("ConductorMaterial").InnerText,
+                    LineType = node.SelectSingleNode("LineType").InnerText,
+                    ThermalConstantHeat = long.Parse(node.SelectSingleNode("ThermalConstantHeat").InnerText),
+                    FirstEnd = long.Parse(node.SelectSingleNode("FirstEnd").InnerText),
+                    SecondEnd = long.Parse(node.SelectSingleNode("SecondEnd").InnerText),
+                    Vertices = new List<Point>()
+                };
 
                 foreach (XmlNode pointNode in node.ChildNodes[9].ChildNodes)
                 {
@@ -148,9 +156,8 @@ namespace Projekat
                     p.Y = _noviY;
                     p.X -= 45.0f;
                     p.Y -= 19.0f;
-                    p.X *= 1000000.0f;
-                    p.Y *= 1000000.0f;
-
+                    p.X *= 1000000000.0f;
+                    p.Y *= 1000000000.0f;
                     l.Vertices.Add(p);
                 }
 
@@ -225,12 +232,15 @@ namespace Projekat
                 if (s.Y < _minY) _minY = s.Y;
             }
 
-            foreach (var v in _lineEntities.SelectMany(s => s.Vertices))
+            foreach (var l in _lineEntities)
             {
-                if (v.X > _maxX) _maxX = v.X;
-                if (v.Y > _maxY) _maxY = v.Y;
-                if (v.X < _minX) _minX = v.X;
-                if (v.Y < _minY) _minY = v.Y;
+                foreach (var v in l.Vertices)
+                {
+                    if (v.X > _maxX) _maxX = v.X;
+                    if (v.Y > _maxY) _maxY = v.Y;
+                    if (v.X < _minX) _minX = v.X;
+                    if (v.Y < _minY) _minY = v.Y;
+                }
             }
         }
 
@@ -244,17 +254,26 @@ namespace Projekat
 
             foreach (var s in _substationEntities)
             {
+
                 Rectangle r = new Rectangle()
                 {
-                    Width = 5, Height = 5, Fill = Brushes.Black, Stroke = Brushes.Red, Name = $"Switch{++switchCount}",
-                    ToolTip = $"{Name}", 
+                    Width = 5, Height = 5, Fill = Brushes.Black, Stroke = Brushes.Red,
+                    ToolTip = new ToolTip()
+                    {
+                        Content = s.Name
+                        //marker.ToolTipText = "Substation\nID: " + sub.Id + "  Name: " + sub.Name;
+                        //marker.ToolTip.Fill = Brushes.Black;
+                        //marker.ToolTip.Foreground = Brushes.White;
+                        //marker.ToolTip.Stroke = Pens.Black;
+                        //marker.ToolTip.TextPadding = new Size(20, 20);
+                    }
                 };
 
                 s.X -= _minX;
                 s.Y -= _minY;
 
-                Canvas.SetTop(r, s.Y * ratioY);
                 Canvas.SetLeft(r, s.X * ratioX);
+                Canvas.SetTop(r, s.Y * ratioY);
 
                 OnlyCanvas.Children.Add(r);
             }
