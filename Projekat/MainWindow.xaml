@@ -7,13 +7,13 @@
         mc:Ignorable="d"
         Title="Projekat 1" Height="1000" Width="1400">
     <DockPanel>
-        <Menu x:Name="menu" Height="30 " DockPanel.Dock="Top" Padding="0,15,0,0">
-            <MenuItem Header="Load Model" Width="100" Click="MenuItem_Click"/>
+        <Menu x:Name="Menu" Height="30 " DockPanel.Dock="Top" Padding="0,15,0,0">
+            <MenuItem Header="Load Model" Width="100" Click="MenuItem_LoadModel"/>
         </Menu>
         <Slider x:Name="slider" Minimum=".1" Maximum="10" Value="1" DockPanel.Dock="Top"/>
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
             <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Canvas Background="Gray" Name="OnlyCanvas" Width="2000" Height="1500">
+                <Canvas Name="OnlyCanvas" Width="10000" Height="10000">
                     <Canvas.LayoutTransform>
                         <ScaleTransform ScaleX="{Binding ElementName=slider, Path=Value}" ScaleY="{Binding ElementName=slider, Path=Value}"/>
                     </Canvas.LayoutTransform>
