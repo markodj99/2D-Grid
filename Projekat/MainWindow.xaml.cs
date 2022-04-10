@@ -18,6 +18,8 @@ namespace Projekat
     {
         #region Fields
 
+        private List<List<Rectangle>> _grid;
+        private int dims1, dims2;
         private double _noviX = 0, _noviY = 0;
 
         private Dictionary<string, double> _coordinates = new Dictionary<string, double>(4)
@@ -37,6 +39,46 @@ namespace Projekat
         public MainWindow()
         {
             InitializeComponent();
+            InitializeLayover();
+        }
+
+        private void InitializeLayover()
+        {
+            dims1 = (int)(OnlyCanvas.Height / 10);
+            dims2 = (int)(OnlyCanvas.Width / 10);
+
+            _grid = new List<List<Rectangle>>();
+            for (int i = 0; i < dims1; i++)
+            {
+                _grid.Add(new List<Rectangle>(dims2));
+                for (int j = 0; j < dims2; j++)
+                {
+                    _grid[i].Add(new Rectangle()
+                    {
+                        Name = $"g_{i}_{j}",
+                        Width = 10,
+                        Height = 10,
+                        Fill = Brushes.White,
+                        Stroke = Brushes.Black,
+                        ToolTip = new ToolTip()
+                        {
+                            Content = $"g_{i}_{j}",
+                            Foreground = Brushes.Blue
+                        }
+                    });
+                }
+            }
+
+            //for (int i = 0; i < _grid.Count; i++)
+            //{
+            //    for (int j = 0; j < _grid[i].Count; j++)
+            //    {
+            //        Canvas.SetTop(_grid[i][j], i * 10);
+            //        Canvas.SetLeft(_grid[i][j], j * 10);
+
+            //        OnlyCanvas.Children.Add(_grid[i][j]);
+            //    }
+            //}
         }
 
         #endregion
@@ -54,9 +96,7 @@ namespace Projekat
             Routes(xmlDoc);
 
             FindMaxMinX_Y();
-            PaintPoints();
-
-            int a = 5;
+            PrintRectangles();
         }
 
         private void Substations(XmlDocument xmlDoc)
@@ -241,7 +281,7 @@ namespace Projekat
             _coordinates["minLon"] = y.Min();
         }
 
-        private void PaintPoints()
+        private void PrintRectangles()
         {
             //Iz nekog razloga moraju da se zamene X i Y i Height i Width
             double ratioX = (_coordinates["maxLat"] - _coordinates["minLat"]) / OnlyCanvas.Height;
@@ -263,8 +303,11 @@ namespace Projekat
                     }
                 };
 
-                Canvas.SetBottom(r, (s.X - _coordinates["minLat"]) / ratioX);
-                Canvas.SetLeft(r, (s.Y - _coordinates["minLon"]) / ratioY);
+                var coordinates = FindCoordinates((int) ((s.X - _coordinates["minLat"]) / ratioX),
+                    (int) ((s.Y - _coordinates["minLon"]) / ratioY));
+
+                Canvas.SetBottom(r, coordinates.Key);
+                Canvas.SetLeft(r, coordinates.Value);
 
                 OnlyCanvas.Children.Add(r);
             }
@@ -285,8 +328,11 @@ namespace Projekat
                     }
                 };
 
-                Canvas.SetBottom(r, (n.X - _coordinates["minLat"]) / ratioX);
-                Canvas.SetLeft(r, (n.Y - _coordinates["minLon"]) / ratioY);
+                var coordinates = FindCoordinates((int)((n.X - _coordinates["minLat"]) / ratioX),
+                    (int)((n.Y - _coordinates["minLon"]) / ratioY));
+
+                Canvas.SetBottom(r, coordinates.Key);
+                Canvas.SetLeft(r, coordinates.Value);
 
                 OnlyCanvas.Children.Add(r);
             }
@@ -307,10 +353,120 @@ namespace Projekat
                     }
                 };
 
-                Canvas.SetBottom(r, (s.X - _coordinates["minLat"]) / ratioX);
-                Canvas.SetLeft(r, (s.Y - _coordinates["minLon"]) / ratioY);
+                var coordinates = FindCoordinates((int)((s.X - _coordinates["minLat"]) / ratioX),
+                    (int)((s.Y - _coordinates["minLon"]) / ratioY));
+
+                Canvas.SetBottom(r, coordinates.Key);
+                Canvas.SetLeft(r, coordinates.Value);
 
                 OnlyCanvas.Children.Add(r);
+            }
+        }
+
+        private KeyValuePair<int, int> FindCoordinates(int bottom, int left)
+        {
+            int b = RoundCoordinate(bottom, true), l = RoundCoordinate(left, false);
+            int i = b / 10, j = l / 10;
+
+            if (i == _grid.Count) i--;
+            if (j == _grid[0].Count) j--;
+
+            if (_grid[i][j].Name.Equals($"g_{i}_{j}"))
+            {
+                _grid[i][j].Name = $"g_{i}_{j}_taken";
+                return new KeyValuePair<int, int>(i * 10, j * 10);
+            }
+
+            Dictionary<string, int> boundries = new Dictionary<string, int>(4)
+            {
+                {"start_I", i - 20 > 0 ? i - 20 : i},
+                {"finish_I", i - 20 > 0 ? i : i + 20},
+                {"start_J", j - 20 > 0 ? j - 20 : j},
+                {"finish_J", j - 20 > 0 ? j : j + 20}
+            };
+
+            for (int first = boundries["start_I"]; first < boundries["finish_I"]; first++)
+            {
+                for (int second = boundries["start_J"]; second < boundries["finish_J"]; second++)
+                {
+                    if (!_grid[first][second].Name.Equals($"g_{first}_{second}")) continue;
+                    i = first;
+                    j = second;
+                    break;
+                }
+            }
+
+            _grid[i][j].Name = ($"g_{i}_{j}_taken");
+            return new KeyValuePair<int, int>(i * 10, j * 10);
+        }
+
+        private int RoundCoordinate(int coordinate, bool bottom)
+        {
+            if (bottom)
+            {
+                switch (coordinate % 10)
+                {
+                    case 1:
+                        if (coordinate - 1 < 0) return 0;
+                        else return coordinate - 1;
+                    case 2:
+                        if (coordinate - 2 < 0) return 0;
+                        else return coordinate - 2;
+                    case 3:
+                        if (coordinate - 3 < 0) return 0;
+                        else return coordinate - 3;
+                    case 4:
+                        if (coordinate - 4 < 0) return 0;
+                        else return coordinate - 4;
+                    case 5:
+                        if (coordinate - 5 < 0) return 0;
+                        else return coordinate - 5;
+                    case 6:
+                        if (coordinate + 4 > (int) OnlyCanvas.Height) return (int) OnlyCanvas.Height;
+                        else return coordinate + 4;
+                    case 7:
+                        if (coordinate + 3 > (int)OnlyCanvas.Height) return (int)OnlyCanvas.Height;
+                        else return coordinate + 3;
+                    case 8:
+                        if (coordinate + 2 > (int)OnlyCanvas.Height) return (int)OnlyCanvas.Height;
+                        else return coordinate + 2;
+                    case 9:
+                        if (coordinate + 1 > (int)OnlyCanvas.Height) return (int)OnlyCanvas.Height;
+                        else return coordinate + 1;
+                    default: return coordinate;
+                }
+            }
+
+            switch (coordinate % 10)
+            {
+                case 1:
+                    if (coordinate - 1 < 0) return 0;
+                    else return coordinate - 1;
+                case 2:
+                    if (coordinate - 2 < 0) return 0;
+                    else return coordinate - 2;
+                case 3:
+                    if (coordinate - 3 < 0) return 0;
+                    else return coordinate - 3;
+                case 4:
+                    if (coordinate - 4 < 0) return 0;
+                    else return coordinate - 4;
+                case 5:
+                    if (coordinate - 5 < 0) return 0;
+                    else return coordinate - 5;
+                case 6:
+                    if (coordinate + 4 > (int)OnlyCanvas.Width) return (int)OnlyCanvas.Width;
+                    else return coordinate + 4;
+                case 7:
+                    if (coordinate + 3 > (int)OnlyCanvas.Width) return (int)OnlyCanvas.Width;
+                    else return coordinate + 3;
+                case 8:
+                    if (coordinate + 2 > (int)OnlyCanvas.Width) return (int)OnlyCanvas.Width;
+                    else return coordinate + 2;
+                case 9:
+                    if (coordinate + 1 > (int)OnlyCanvas.Width) return (int)OnlyCanvas.Width;
+                    else return coordinate + 1;
+                default: return coordinate;
             }
         }
 
