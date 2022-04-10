@@ -19,8 +19,13 @@ namespace Projekat
         #region Fields
 
         private double _noviX = 0, _noviY = 0;
-        private double _maxX = double.MinValue, _maxY = double.MinValue;
-        private double _minX = double.MaxValue, _minY = double.MaxValue;
+
+        private Dictionary<string, double> _coordinates = new Dictionary<string, double>(4)
+        {
+            {"maxLat", double.MinValue}, {"maxLon", double.MinValue},
+            {"minLat", double.MaxValue}, {"minLon", double.MaxValue}
+        };
+
         private List<SubstationEntity> _substationEntities = new List<SubstationEntity>(67);
         private List<NodeEntity> _nodeEntities = new List<NodeEntity>(2043);
         private List<SwitchEntity> _switchEntities = new List<SwitchEntity>(2282);
@@ -50,6 +55,8 @@ namespace Projekat
 
             FindMaxMinX_Y();
             PaintPoints();
+
+            int a = 5;
         }
 
         private void Substations(XmlDocument xmlDoc)
@@ -70,8 +77,6 @@ namespace Projekat
                 ToLatLon(sub.X, sub.Y, 34, out _noviX, out _noviY);
                 sub.X = _noviX;
                 sub.Y = _noviY;
-                sub.X *= 1000000000.0f;
-                sub.Y *= 1000000000.0f;
                 _substationEntities.Add(sub);
             }
         }
@@ -93,8 +98,6 @@ namespace Projekat
                 ToLatLon(nodeEntity.X, nodeEntity.Y, 34, out _noviX, out _noviY);
                 nodeEntity.X = _noviX;
                 nodeEntity.Y = _noviY;
-                nodeEntity.X *= 1000000000.0f;
-                nodeEntity.Y *= 1000000000.0f;
                 _nodeEntities.Add(nodeEntity);
             }
         }
@@ -117,8 +120,6 @@ namespace Projekat
                 ToLatLon(switchobj.X, switchobj.Y, 34, out _noviX, out _noviY);
                 switchobj.X = _noviX;
                 switchobj.Y = _noviY;
-                switchobj.X *= 1000000000.0f;
-                switchobj.Y *= 1000000000.0f;
                 _switchEntities.Add(switchobj);
             }
         }
@@ -154,8 +155,6 @@ namespace Projekat
                     ToLatLon(p.X, p.Y, 34, out _noviX, out _noviY);
                     p.X = _noviX;
                     p.Y = _noviY;
-                    p.X *= 1000000000.0f;
-                    p.Y *= 1000000000.0f;
                     l.Vertices.Add(p);
                 }
 
@@ -206,120 +205,110 @@ namespace Projekat
 
         public void FindMaxMinX_Y()
         {
+            List<double> x = new List<double>(67 + 2043 + 2282 + 2336);
+            List<double> y = new List<double>(67 + 2043 + 2282 + 2336);
+
             foreach (var s in _substationEntities)
             {
-                if (s.X > _maxX) _maxX = s.X;
-                if (s.Y > _maxY) _maxY = s.Y;
-                if (s.X < _minX) _minX = s.X;
-                if (s.Y < _minY) _minY = s.Y;
+                x.Add(s.X);
+                y.Add(s.Y);
             }
 
             foreach (var n in _nodeEntities)
             {
-                if (n.X > _maxX) _maxX = n.X;
-                if (n.Y > _maxY) _maxY = n.Y;
-                if (n.X < _minX) _minX = n.X;
-                if (n.Y < _minY) _minY = n.Y;
+                x.Add(n.X);
+                y.Add(n.Y);
             }
 
             foreach (var s in _switchEntities)
             {
-                if (s.X > _maxX) _maxX = s.X;
-                if (s.Y > _maxY) _maxY = s.Y;
-                if (s.X < _minX) _minX = s.X;
-                if (s.Y < _minY) _minY = s.Y;
+                x.Add(s.X);
+                y.Add(s.Y);
             }
 
             foreach (var l in _lineEntities)
             {
                 foreach (var v in l.Vertices)
                 {
-                    if (v.X > _maxX) _maxX = v.X;
-                    if (v.Y > _maxY) _maxY = v.Y;
-                    if (v.X < _minX) _minX = v.X;
-                    if (v.Y < _minY) _minY = v.Y;
+                    x.Add(v.X);
+                    y.Add(v.Y);
                 }
             }
+
+            _coordinates["maxLat"] = x.Max();
+            _coordinates["maxLon"] = y.Max();
+            _coordinates["minLat"] = x.Min();
+            _coordinates["minLon"] = y.Min();
         }
 
         private void PaintPoints()
         {
-            _maxX -= _minX;
-            _maxY -= _minY;
-
-            double ratioX =  _maxX / OnlyCanvas.Width;
-            double ratioY =  _maxY / OnlyCanvas.Height;
+            //Iz nekog razloga moraju da se zamene X i Y i Height i Width
+            double ratioX = (_coordinates["maxLat"] - _coordinates["minLat"]) / OnlyCanvas.Height;
+            double ratioY = (_coordinates["maxLon"] - _coordinates["minLon"]) / OnlyCanvas.Width;
 
             foreach (var s in _substationEntities)
             {
                 Rectangle r = new Rectangle()
                 {
+                    Name = string.Join("", s.Name.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries)),
                     Width = 5,
                     Height = 5,
                     Fill = Brushes.Black,
-                    Stroke = Brushes.Red,
+                    Stroke = Brushes.Blue,
                     ToolTip = new ToolTip()
                     {
-                        Content = s.Name,
-                        Foreground = Brushes.Black
+                        Content = $"Id:{s.Id} Name:{s.Name}",
+                        Foreground = Brushes.Blue
                     }
                 };
 
-                s.X -= _minX;
-                s.Y -= _minY;
-
-                Canvas.SetLeft(r, s.X / ratioX);
-                Canvas.SetBottom(r, s.Y / ratioY);
+                Canvas.SetBottom(r, (s.X - _coordinates["minLat"]) / ratioX);
+                Canvas.SetLeft(r, (s.Y - _coordinates["minLon"]) / ratioY);
 
                 OnlyCanvas.Children.Add(r);
             }
 
             foreach (var n in _nodeEntities)
             {
-
                 Rectangle r = new Rectangle()
                 {
+                    Name = string.Join("", n.Name.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries)),
                     Width = 5,
                     Height = 5,
-                    Fill = Brushes.White,
+                    Fill = Brushes.Black,
                     Stroke = Brushes.Red,
                     ToolTip = new ToolTip()
                     {
-                        Content = n.Name,
-                        Foreground = Brushes.Black
+                        Content = $"Id:{n.Id} Name:{n.Name}",
+                        Foreground = Brushes.Red
                     }
                 };
 
-                n.X -= _minX;
-                n.Y -= _minY;
-
-                Canvas.SetLeft(r, n.X / ratioX);
-                Canvas.SetBottom(r, n.Y / ratioY);
+                Canvas.SetBottom(r, (n.X - _coordinates["minLat"]) / ratioX);
+                Canvas.SetLeft(r, (n.Y - _coordinates["minLon"]) / ratioY);
 
                 OnlyCanvas.Children.Add(r);
             }
 
             foreach (var s in _switchEntities)
             {
-
                 Rectangle r = new Rectangle()
                 {
+                    Name = string.Join("", s.Name.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries)),
                     Width = 5,
                     Height = 5,
-                    Fill = Brushes.Green,
-                    Stroke = Brushes.Red,
+                    Fill = Brushes.Black,
+                    Stroke = Brushes.Green,
                     ToolTip = new ToolTip()
                     {
-                        Content = s.Name,
-                        Foreground = Brushes.Black
+                        Content = $"Id:{s.Id} Name:{s.Name}",
+                        Foreground = Brushes.Green
                     }
                 };
 
-                s.X -= _minX;
-                s.Y -= _minY;
-
-                Canvas.SetLeft(r, s.X / ratioX);
-                Canvas.SetBottom(r, s.Y / ratioY);
+                Canvas.SetBottom(r, (s.X - _coordinates["minLat"]) / ratioX);
+                Canvas.SetLeft(r, (s.Y - _coordinates["minLon"]) / ratioY);
 
                 OnlyCanvas.Children.Add(r);
             }
