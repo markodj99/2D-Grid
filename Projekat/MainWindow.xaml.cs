@@ -11,6 +11,26 @@ using Point = Projekat.Model.Point;
 
 namespace Projekat
 {
+    // QueueItem for current location and distance
+    // from source location
+    class QueueItem
+    {
+        public int Row { get; set; }
+        public int Col { get; set; }
+        public List<KeyValuePair<int, int>> Path { get; set; }
+
+        public QueueItem()
+        {
+            Row = Col = 0;
+            Path = new List<KeyValuePair<int, int>>();
+        }
+
+        public QueueItem(int row, int col, List<KeyValuePair<int, int>> path)
+        {
+            Row = row; Col = col; Path = path;
+        }
+    }
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -18,10 +38,12 @@ namespace Projekat
     {
         #region Fields
 
-        private bool _is_loaded = false;
+        private bool _isLoaded = false;
         private List<List<Rectangle>> _grid;
-        private int dims1, dims2;
+        private int _dims1, _dims2;
         private double _noviX = 0, _noviY = 0;
+
+        private Dictionary<long,KeyValuePair<int, int>> _printedElements = new Dictionary<long, KeyValuePair<int, int>>(67 + 2043 + 2282);
 
         private Dictionary<string, double> _coordinates = new Dictionary<string, double>(4)
         {
@@ -46,14 +68,14 @@ namespace Projekat
 
         private void InitializeLayover()
         {
-            dims1 = (int)(OnlyCanvas.Height / 5);
-            dims2 = (int)(OnlyCanvas.Width / 5);
+            _dims1 = (int)(OnlyCanvas.Height / 5);
+            _dims2 = (int)(OnlyCanvas.Width / 5);
 
             _grid = new List<List<Rectangle>>();
-            for (int i = 0; i < dims1; i++)
+            for (int i = 0; i < _dims1; i++)
             {
-                _grid.Add(new List<Rectangle>(dims2));
-                for (int j = 0; j < dims2; j++)
+                _grid.Add(new List<Rectangle>(_dims2));
+                for (int j = 0; j < _dims2; j++)
                 {
                     _grid[i].Add(null);
                 }
@@ -66,7 +88,7 @@ namespace Projekat
 
         private void MenuItem_LoadModel(object sender, RoutedEventArgs e)
         {
-            if (!_is_loaded)
+            if (!_isLoaded)
             {
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.Load("Geographic.xml");
@@ -82,7 +104,7 @@ namespace Projekat
                 PrintConnections();
             }
 
-            _is_loaded = true;
+            _isLoaded = true;
         }
 
         private void Substations(XmlDocument xmlDoc)
@@ -267,6 +289,7 @@ namespace Projekat
             _coordinates["minLon"] = y.Min();
         }
 
+        //sredi metodu
         private void PrintRectangles()
         {
             //Iz nekog razloga moraju da se zamene X i Y i Height i Width
@@ -296,6 +319,7 @@ namespace Projekat
                 Canvas.SetLeft(r, coordinates.Value);
 
                 OnlyCanvas.Children.Add(r);
+                _printedElements.Add(s.Id, new KeyValuePair<int, int>(coordinates.Key, coordinates.Value));
             }
 
             foreach (var n in _nodeEntities)
@@ -321,6 +345,7 @@ namespace Projekat
                 Canvas.SetLeft(r, coordinates.Value);
 
                 OnlyCanvas.Children.Add(r);
+                _printedElements.Add(n.Id, new KeyValuePair<int, int>(coordinates.Key, coordinates.Value));
             }
 
             foreach (var s in _switchEntities)
@@ -346,6 +371,7 @@ namespace Projekat
                 Canvas.SetLeft(r, coordinates.Value);
 
                 OnlyCanvas.Children.Add(r);
+                _printedElements.Add(s.Id, new KeyValuePair<int, int>(coordinates.Key, coordinates.Value));
             }
         }
 
@@ -426,12 +452,67 @@ namespace Projekat
             }
         }
 
+        // TODO: sredi ovo idiote
         private void PrintConnections()
         {
-            for (int i = 0; i < _lineEntities.Count; i++)
+            foreach (var s in _lineEntities)
             {
-                
+
             }
+        }
+
+        // TODO: i ovo isto
+        private List<KeyValuePair<int, int>> MinDistance(KeyValuePair<int, int> start, string finish)
+        {
+            QueueItem source = new QueueItem(start.Key, start.Value, new List<KeyValuePair<int, int>>());
+
+            bool[,] visited = new bool[_dims1, _dims2];
+            for (int i = 0; i < _dims1; i++)
+            {
+                for (int j = 0; j < _dims2; j++)
+                {
+                    visited[i, j] = _grid[i][j] == null;
+                }
+            }
+
+            Queue<QueueItem> q = new Queue<QueueItem>();
+            q.Enqueue(source);
+            visited[source.Row, source.Col] = true;
+
+            while (q.Count != 0)
+            {
+                QueueItem p = q.Dequeue();
+
+                if (_grid[p.Row][p.Col] != null && _grid[p.Row][p.Col].Name.Equals(finish)) return p.Path;
+
+                if (p.Row - 1 >= 0 && !visited[p.Row - 1, p.Col])
+                {
+                    p.Path.Add(new KeyValuePair<int, int>(p.Row, p.Col));
+                    q.Enqueue(new QueueItem(p.Row - 1, p.Col, p.Path));
+                    visited[p.Row - 1, p.Col] = true;
+                }
+
+                if (p.Row + 1 < _dims1 && !visited[p.Row + 1, p.Col])
+                {
+                    p.Path.Add(new KeyValuePair<int, int>(p.Row, p.Col));
+                    q.Enqueue(new QueueItem(p.Row + 1, p.Col, p.Path));
+                    visited[p.Row + 1, p.Col] = true;
+                }
+
+                if (p.Col - 1 >= 0 && !visited[p.Row, p.Col - 1])
+                {
+                    p.Path.Add(new KeyValuePair<int, int>(p.Row, p.Col));
+                    q.Enqueue(new QueueItem(p.Row, p.Col - 1, p.Path));
+                    visited[p.Row, p.Col - 1] = true;
+                }
+
+                if (p.Col + 1 >= _dims2 || visited[p.Row, p.Col + 1]) continue;
+                p.Path.Add(new KeyValuePair<int, int>(p.Row, p.Col));
+                q.Enqueue(new QueueItem(p.Row, p.Col + 1, p.Path));
+                visited[p.Row,p.Col + 1] = true;
+            }
+
+            return new List<KeyValuePair<int, int>>();
         }
 
         #endregion

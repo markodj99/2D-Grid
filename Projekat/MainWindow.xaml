@@ -13,7 +13,7 @@
         <Slider x:Name="slider" Minimum=".1" Maximum="10" Value="1" DockPanel.Dock="Top"/>
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
             <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Canvas Name="OnlyCanvas" Width="10000" Height="10000">
+                <Canvas Name="OnlyCanvas" Width="5000" Height="5000">
                     <Canvas.LayoutTransform>
                         <ScaleTransform ScaleX="{Binding ElementName=slider, Path=Value}" ScaleY="{Binding ElementName=slider, Path=Value}"/>
                     </Canvas.LayoutTransform>
