@@ -462,13 +462,17 @@ namespace Projekat
                     _printedElements[second].Key / 5, _printedElements[second].Value / 5, 
                     _grid[_printedElements[second].Key / 5][_printedElements[second].Value / 5].Name);
 
+                if (path.Count == 0) continue;
+
                 for (int i = 1; i < path.Count; i++)
                 {
+                    
+
                     Rectangle r = new Rectangle()
                     {
                         Name = $"Line{l.Id}",
-                        Width = 5,
-                        Height = 5,
+                        Width = 2,
+                        Height = 2,
                         Fill = Brushes.Black,
                         Stroke = Brushes.Black,
                         ToolTip = new ToolTip()
@@ -480,7 +484,7 @@ namespace Projekat
 
                     _grid[path[i].Key][path[i].Value] = r;
 
-                    Canvas.SetTop(r, path[i].Key * 5);
+                    Canvas.SetBottom(r, path[i].Key * 5);
                     Canvas.SetLeft(r, path[i].Value * 5);
 
                     OnlyCanvas.Children.Add(r);
