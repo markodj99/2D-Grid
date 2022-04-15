@@ -11,9 +11,7 @@ using Point = Projekat.Model.Point;
 
 namespace Projekat
 {
-    // QueueItem for current location and distance
-    // from source location
-    class QueueItem
+    public class QueueItem
     {
         public int Row { get; set; }
         public int Col { get; set; }
@@ -31,9 +29,6 @@ namespace Projekat
         }
     }
 
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         #region Fields
@@ -452,64 +447,97 @@ namespace Projekat
             }
         }
 
-        // TODO: sredi ovo idiote
         private void PrintConnections()
         {
-            foreach (var s in _lineEntities)
-            {
+            int bad = 0;
 
+            foreach (var l in _lineEntities)
+            {
+                long first = l.FirstEnd, second = l.SecondEnd;
+
+                if (!_printedElements.ContainsKey(first)) continue;
+                if (!_printedElements.ContainsKey(second)) continue;
+
+                List<KeyValuePair<int, int>> path = BFS(_printedElements[first].Key / 5, _printedElements[first].Value / 5,
+                    _printedElements[second].Key / 5, _printedElements[second].Value / 5, 
+                    _grid[_printedElements[second].Key / 5][_printedElements[second].Value / 5].Name);
+
+                for (int i = 1; i < path.Count; i++)
+                {
+                    Rectangle r = new Rectangle()
+                    {
+                        Name = $"Line{l.Id}",
+                        Width = 5,
+                        Height = 5,
+                        Fill = Brushes.Black,
+                        Stroke = Brushes.Black,
+                        ToolTip = new ToolTip()
+                        {
+                            Content = $"Id:{l.Id} Name:{l.Name}",
+                            Foreground = Brushes.Black
+                        }
+                    };
+
+                    _grid[path[i].Key][path[i].Value] = r;
+
+                    Canvas.SetTop(r, path[i].Key * 5);
+                    Canvas.SetLeft(r, path[i].Value * 5);
+
+                    OnlyCanvas.Children.Add(r);
+                }
             }
         }
 
-        // TODO: i ovo isto
-        private List<KeyValuePair<int, int>> MinDistance(KeyValuePair<int, int> start, string finish)
+        private List<KeyValuePair<int, int>> BFS(int sRow, int sCol, int dRow, int dCol, string target)
         {
-            QueueItem source = new QueueItem(start.Key, start.Value, new List<KeyValuePair<int, int>>());
+            QueueItem source = new QueueItem(sRow, sCol, new List<KeyValuePair<int, int>>());
 
             bool[,] visited = new bool[_dims1, _dims2];
             for (int i = 0; i < _dims1; i++)
             {
                 for (int j = 0; j < _dims2; j++)
                 {
-                    visited[i, j] = _grid[i][j] == null;
+                    visited[i, j] = _grid[i][j] != null;
                 }
             }
+            visited[dRow, dCol] = false;
 
             Queue<QueueItem> q = new Queue<QueueItem>();
             q.Enqueue(source);
             visited[source.Row, source.Col] = true;
-
             while (q.Count != 0)
             {
                 QueueItem p = q.Dequeue();
 
-                if (_grid[p.Row][p.Col] != null && _grid[p.Row][p.Col].Name.Equals(finish)) return p.Path;
+                if (_grid[p.Row][p.Col] != null) if (_grid[p.Row][p.Col].Name.Equals(target)) return p.Path;
 
-                if (p.Row - 1 >= 0 && !visited[p.Row - 1, p.Col])
+                if (p.Row - 1 >= 0 && visited[p.Row - 1, p.Col] == false)
                 {
                     p.Path.Add(new KeyValuePair<int, int>(p.Row, p.Col));
-                    q.Enqueue(new QueueItem(p.Row - 1, p.Col, p.Path));
+                    q.Enqueue(new QueueItem(p.Row - 1, p.Col, new List<KeyValuePair<int, int>>(p.Path)));
                     visited[p.Row - 1, p.Col] = true;
                 }
 
-                if (p.Row + 1 < _dims1 && !visited[p.Row + 1, p.Col])
+                if (p.Row + 1 < _dims1 && visited[p.Row + 1, p.Col] == false)
                 {
                     p.Path.Add(new KeyValuePair<int, int>(p.Row, p.Col));
-                    q.Enqueue(new QueueItem(p.Row + 1, p.Col, p.Path));
+                    q.Enqueue(new QueueItem(p.Row + 1, p.Col, new List<KeyValuePair<int, int>>(p.Path)));
                     visited[p.Row + 1, p.Col] = true;
                 }
 
-                if (p.Col - 1 >= 0 && !visited[p.Row, p.Col - 1])
+                if (p.Col - 1 >= 0 && visited[p.Row, p.Col - 1] == false)
                 {
                     p.Path.Add(new KeyValuePair<int, int>(p.Row, p.Col));
-                    q.Enqueue(new QueueItem(p.Row, p.Col - 1, p.Path));
+                    q.Enqueue(new QueueItem(p.Row, p.Col - 1, new List<KeyValuePair<int, int>>(p.Path)));
                     visited[p.Row, p.Col - 1] = true;
                 }
 
-                if (p.Col + 1 >= _dims2 || visited[p.Row, p.Col + 1]) continue;
-                p.Path.Add(new KeyValuePair<int, int>(p.Row, p.Col));
-                q.Enqueue(new QueueItem(p.Row, p.Col + 1, p.Path));
-                visited[p.Row,p.Col + 1] = true;
+                if (p.Col + 1 < _dims2 && visited[p.Row, p.Col + 1] == false)
+                {
+                    p.Path.Add(new KeyValuePair<int, int>(p.Row, p.Col));
+                    q.Enqueue(new QueueItem(p.Row, p.Col + 1, new List<KeyValuePair<int, int>>(p.Path)));
+                    visited[p.Row, p.Col + 1] = true;
+                }
             }
 
             return new List<KeyValuePair<int, int>>();
