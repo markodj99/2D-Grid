@@ -11,6 +11,14 @@ using Point = Projekat.Model.Point;
 
 namespace Projekat
 {
+    public enum Direction : int
+    {
+        UP = 0, 
+        DOWN = 1, 
+        LEFT = 2, 
+        RIGHT = 3
+    }
+
     public class QueueItem
     {
         public int Row { get; set; }
@@ -449,8 +457,6 @@ namespace Projekat
 
         private void PrintConnections()
         {
-            int bad = 0;
-
             foreach (var l in _lineEntities)
             {
                 long first = l.FirstEnd, second = l.SecondEnd;
@@ -462,32 +468,96 @@ namespace Projekat
                     _printedElements[second].Key / 5, _printedElements[second].Value / 5, 
                     _grid[_printedElements[second].Key / 5][_printedElements[second].Value / 5].Name);
 
+
+                // dodaj za sledecu iteraciju
                 if (path.Count == 0) continue;
 
                 for (int i = 1; i < path.Count; i++)
                 {
-                    
+                    Direction direction = DetermineDirection(i, path, _printedElements[second].Key / 5, _printedElements[second].Value / 5);
+                    Line lineSegment;
+
+                    switch (direction)
+                    {
+                        case Direction.UP:
+                            lineSegment = new Line()
+                            {
+                                X1 = 2.5,
+                                Y1 = 5,
+                                X2 = 2.5,
+                                Y2 = 0,
+                                Stroke = Brushes.DarkOrchid,
+                                StrokeThickness = 1,
+                                ToolTip = new ToolTip()
+                                {
+                                    Content = $"Id:{l.Id} Name:{l.Name}",
+                                    Foreground = Brushes.DarkOrchid
+                                }
+                            };
+                            break;
+                        case Direction.DOWN:
+                            lineSegment = new Line()
+                            {
+                                X1 = 2.5,
+                                Y1 = 0,
+                                X2 = 2.5,
+                                Y2 = 5,
+                                Stroke = Brushes.DarkOrchid,
+                                StrokeThickness = 1,
+                                ToolTip = new ToolTip()
+                                {
+                                    Content = $"Id:{l.Id} Name:{l.Name}",
+                                    Foreground = Brushes.DarkOrchid
+                                }
+                            };
+                            break;
+                        case Direction.LEFT:
+                            lineSegment = new Line()
+                            {
+                                X1 = 5,
+                                Y1 = 2.5,
+                                X2 = 0,
+                                Y2 = 2.5,
+                                Stroke = Brushes.DarkOrchid,
+                                StrokeThickness = 1,
+                                ToolTip = new ToolTip()
+                                {
+                                    Content = $"Id:{l.Id} Name:{l.Name}",
+                                    Foreground = Brushes.DarkOrchid
+                                }
+                            };
+                            break;
+                        case Direction.RIGHT:
+                            lineSegment = new Line()
+                            {
+                                X1 = 0,
+                                Y1 = 2.5,
+                                X2 = 5,
+                                Y2 = 2.5,
+                                Stroke = Brushes.DarkOrchid,
+                                StrokeThickness = 1,
+                                ToolTip = new ToolTip()
+                                {
+                                    Content = $"Id:{l.Id} Name:{l.Name}",
+                                    Foreground = Brushes.DarkOrchid
+                                }
+                            };
+                            break;
+                        default:
+                            lineSegment = new Line();
+                            break;
+                    }
 
                     Rectangle r = new Rectangle()
                     {
-                        Name = $"Line{l.Id}",
-                        Width = 2,
-                        Height = 2,
-                        Fill = Brushes.Black,
-                        Stroke = Brushes.Black,
-                        ToolTip = new ToolTip()
-                        {
-                            Content = $"Id:{l.Id} Name:{l.Name}",
-                            Foreground = Brushes.Black
-                        }
                     };
 
                     _grid[path[i].Key][path[i].Value] = r;
 
-                    Canvas.SetBottom(r, path[i].Key * 5);
-                    Canvas.SetLeft(r, path[i].Value * 5);
+                    Canvas.SetBottom(lineSegment, path[i].Key * 5);
+                    Canvas.SetLeft(lineSegment, path[i].Value * 5);
 
-                    OnlyCanvas.Children.Add(r);
+                    OnlyCanvas.Children.Add(lineSegment);
                 }
             }
         }
@@ -545,6 +615,18 @@ namespace Projekat
             }
 
             return new List<KeyValuePair<int, int>>();
+        }
+
+        private Direction DetermineDirection(int pos, List<KeyValuePair<int, int>> path, int lRow, int lCol)
+        {
+            if (pos + 1 == path.Count)
+            {
+                if (path[pos].Key == lRow) return lCol > path[pos].Value ? Direction.RIGHT : Direction.LEFT;
+                return lRow > path[pos].Key ? Direction.UP : Direction.DOWN;
+            }
+
+            if (path[pos + 1].Key == path[pos].Key) return path[pos + 1].Value > path[pos].Value ? Direction.RIGHT : Direction.LEFT;
+            return path[pos + 1].Key > path[pos].Key ? Direction.UP : Direction.DOWN;
         }
 
         #endregion
