@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -11,14 +12,6 @@ using Point = Projekat.Model.Point;
 
 namespace Projekat
 {
-    public enum Direction : int
-    {
-        UP = 0, 
-        DOWN = 1, 
-        LEFT = 2, 
-        RIGHT = 3
-    }
-
     public class QueueItem
     {
         public int Row { get; set; }
@@ -45,8 +38,10 @@ namespace Projekat
         private List<List<Rectangle>> _grid;
         private int _dims1, _dims2;
         private double _noviX = 0, _noviY = 0;
+        private Dictionary<long, Tuple<long, long>> _printedLines = new Dictionary<long, Tuple<long, long>>();
+        private Dictionary<long, Tuple<long, long, long, string>> _secondIteration = new Dictionary<long, Tuple<long, long, long, string>>();
 
-        private Dictionary<long,KeyValuePair<int, int>> _printedElements = new Dictionary<long, KeyValuePair<int, int>>(67 + 2043 + 2282);
+        private Dictionary<long, Tuple<int, int>> _printedElements = new Dictionary<long, Tuple<int, int>>(67 + 2043 + 2282);
 
         private Dictionary<string, double> _coordinates = new Dictionary<string, double>(4)
         {
@@ -292,51 +287,60 @@ namespace Projekat
             _coordinates["minLon"] = y.Min();
         }
 
-        //sredi metodu
         private void PrintRectangles()
         {
             //Iz nekog razloga moraju da se zamene X i Y i Height i Width
             double ratioX = (_coordinates["maxLat"] - _coordinates["minLat"]) / OnlyCanvas.Height;
             double ratioY = (_coordinates["maxLon"] - _coordinates["minLon"]) / OnlyCanvas.Width;
 
+            PrintSubstations(ratioX, ratioY);
+            PrintNodes(ratioX, ratioY);
+            PrintSwitches(ratioX, ratioY);
+        }
+
+        private void PrintSubstations(double ratioX, double ratioY)
+        {
             foreach (var s in _substationEntities)
             {
                 Rectangle r = new Rectangle()
                 {
-                    Name = string.Join("", s.Name.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries)),
+                    Name = $"Substation{s.Id}",
                     Width = 5,
                     Height = 5,
                     Fill = Brushes.Black,
                     Stroke = Brushes.Blue,
                     ToolTip = new ToolTip()
                     {
-                        Content = $"Id:{s.Id} Name:{s.Name}",
+                        Content = $"Substation Id:{s.Id} Name:{s.Name}",
                         Foreground = Brushes.Blue
                     }
                 };
 
-                var coordinates = FindCoordinates((int) ((s.X - _coordinates["minLat"]) / ratioX),
-                    (int) ((s.Y - _coordinates["minLon"]) / ratioY), r);
+                var coordinates = FindCoordinates((int)((s.X - _coordinates["minLat"]) / ratioX),
+                    (int)((s.Y - _coordinates["minLon"]) / ratioY), r);
 
                 Canvas.SetBottom(r, coordinates.Key);
                 Canvas.SetLeft(r, coordinates.Value);
 
                 OnlyCanvas.Children.Add(r);
-                _printedElements.Add(s.Id, new KeyValuePair<int, int>(coordinates.Key, coordinates.Value));
+                _printedElements.Add(s.Id, new Tuple<int, int>(coordinates.Key, coordinates.Value));
             }
+        }
 
+        private void PrintNodes(double ratioX, double ratioY)
+        {
             foreach (var n in _nodeEntities)
             {
                 Rectangle r = new Rectangle()
                 {
-                    Name = string.Join("", n.Name.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries)),
+                    Name = $"Node{n.Id}",
                     Width = 5,
                     Height = 5,
                     Fill = Brushes.Black,
                     Stroke = Brushes.Red,
                     ToolTip = new ToolTip()
                     {
-                        Content = $"Id:{n.Id} Name:{n.Name}",
+                        Content = $"Node Id:{n.Id} Name:{n.Name}",
                         Foreground = Brushes.Red
                     }
                 };
@@ -348,21 +352,25 @@ namespace Projekat
                 Canvas.SetLeft(r, coordinates.Value);
 
                 OnlyCanvas.Children.Add(r);
-                _printedElements.Add(n.Id, new KeyValuePair<int, int>(coordinates.Key, coordinates.Value));
+                _printedElements.Add(n.Id, new Tuple<int, int>(coordinates.Key, coordinates.Value));
             }
+        }
+
+        private void PrintSwitches(double ratioX, double ratioY)
+        {
 
             foreach (var s in _switchEntities)
             {
                 Rectangle r = new Rectangle()
                 {
-                    Name = string.Join("", s.Name.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries)),
+                    Name = $"Switch{s.Id}",
                     Width = 5,
                     Height = 5,
                     Fill = Brushes.Black,
                     Stroke = Brushes.Green,
                     ToolTip = new ToolTip()
                     {
-                        Content = $"Id:{s.Id} Name:{s.Name}",
+                        Content = $"Switch Id:{s.Id} Name:{s.Name}",
                         Foreground = Brushes.Green
                     }
                 };
@@ -374,7 +382,7 @@ namespace Projekat
                 Canvas.SetLeft(r, coordinates.Value);
 
                 OnlyCanvas.Children.Add(r);
-                _printedElements.Add(s.Id, new KeyValuePair<int, int>(coordinates.Key, coordinates.Value));
+                _printedElements.Add(s.Id, new Tuple<int, int>(coordinates.Key, coordinates.Value));
             }
         }
 
@@ -457,6 +465,14 @@ namespace Projekat
 
         private void PrintConnections()
         {
+            int counter = 0;
+
+            FirstIteration(ref counter);
+            SecondIteration(ref counter);
+        }
+
+        private void FirstIteration(ref int counter)
+        {
             foreach (var l in _lineEntities)
             {
                 long first = l.FirstEnd, second = l.SecondEnd;
@@ -464,116 +480,165 @@ namespace Projekat
                 if (!_printedElements.ContainsKey(first)) continue;
                 if (!_printedElements.ContainsKey(second)) continue;
 
-                List<KeyValuePair<int, int>> path = BFS(_printedElements[first].Key / 5, _printedElements[first].Value / 5,
-                    _printedElements[second].Key / 5, _printedElements[second].Value / 5, 
-                    _grid[_printedElements[second].Key / 5][_printedElements[second].Value / 5].Name);
+                if (_printedLines.ContainsValue(new Tuple<long, long>(first, second))
+                   || _printedLines.ContainsValue(new Tuple<long, long>(second, first))) continue;
 
+                var path = BFS(_printedElements[first].Item1 / 5, _printedElements[first].Item2 / 5,
+                    _printedElements[second].Item1 / 5, _printedElements[second].Item2 / 5,
+                    _grid[_printedElements[second].Item1 / 5][_printedElements[second].Item2 / 5].Name);
 
-                // dodaj za sledecu iteraciju
+                if (path.Count == 0)
+                {
+                    _secondIteration.Add(counter++, new Tuple<long, long, long, string>(first, second, l.Id, l.Name));
+                    continue;
+                }
+
+                for (int i = 1; i < path.Count; i++)
+                {
+                    if (_grid[path[i].Key][path[i].Value] != null)
+                    {
+                        Rectangle r = new Rectangle()
+                        {
+                            Name = $"Line{l.Id}",
+                            Width = 5,
+                            Height = 5,
+                            Fill = Brushes.Orchid,
+                            Stroke = Brushes.Orchid,
+                            ToolTip = new ToolTip()
+                            {
+                                Content = $"Id:{l.Id} Name:{l.Name}",
+                                Foreground = Brushes.DarkOrchid
+                            }
+                        };
+
+                        _grid[path[i].Key][path[i].Value] = r;
+
+                        Canvas.SetBottom(r, path[i].Key * 5);
+                        Canvas.SetLeft(r, path[i].Value * 5);
+
+                        OnlyCanvas.Children.Add(r);
+                    }
+                }
+
+                _printedLines.Add(counter++, new Tuple<long, long>(first, second));
+            }
+        }
+
+        private void SecondIteration(ref int counter)
+        {
+            foreach (var t in _secondIteration.Values)
+            {
+                long first = t.Item1, second = t.Item2;
+
+                if (!_printedElements.ContainsKey(first)) continue;
+                if (!_printedElements.ContainsKey(second)) continue;
+
+                if (_printedLines.ContainsValue(new Tuple<long, long>(first, second))
+                    || _printedLines.ContainsValue(new Tuple<long, long>(second, first))) continue;
+
+                var path = BFS(_printedElements[first].Item1 / 5, _printedElements[first].Item2 / 5,
+                    _printedElements[second].Item1 / 5, _printedElements[second].Item2 / 5,
+                    _grid[_printedElements[second].Item1 / 5][_printedElements[second].Item2 / 5].Name, true);
+
                 if (path.Count == 0) continue;
 
                 for (int i = 1; i < path.Count; i++)
                 {
-                    Direction direction = DetermineDirection(i, path, _printedElements[second].Key / 5, _printedElements[second].Value / 5);
-                    Line lineSegment;
-
-                    switch (direction)
+                    if (_grid[path[i].Key][path[i].Value] != null)
                     {
-                        case Direction.UP:
-                            lineSegment = new Line()
+                        OnlyCanvas.Children.Remove(_grid[path[i].Key][path[i].Value]);
+
+                        Rectangle r = new Rectangle()
+                        {
+                            Name = $"Intersection{t.Item3}and{t.Item4}",
+                            Width = 5,
+                            Height = 5,
+                            Fill = Brushes.Tomato,
+                            Stroke = Brushes.Tomato,
+                            ToolTip = new ToolTip()
                             {
-                                X1 = 2.5,
-                                Y1 = 5,
-                                X2 = 2.5,
-                                Y2 = 0,
-                                Stroke = Brushes.DarkOrchid,
-                                StrokeThickness = 1,
-                                ToolTip = new ToolTip()
-                                {
-                                    Content = $"Id:{l.Id} Name:{l.Name}",
-                                    Foreground = Brushes.DarkOrchid
-                                }
-                            };
-                            break;
-                        case Direction.DOWN:
-                            lineSegment = new Line()
-                            {
-                                X1 = 2.5,
-                                Y1 = 0,
-                                X2 = 2.5,
-                                Y2 = 5,
-                                Stroke = Brushes.DarkOrchid,
-                                StrokeThickness = 1,
-                                ToolTip = new ToolTip()
-                                {
-                                    Content = $"Id:{l.Id} Name:{l.Name}",
-                                    Foreground = Brushes.DarkOrchid
-                                }
-                            };
-                            break;
-                        case Direction.LEFT:
-                            lineSegment = new Line()
-                            {
-                                X1 = 5,
-                                Y1 = 2.5,
-                                X2 = 0,
-                                Y2 = 2.5,
-                                Stroke = Brushes.DarkOrchid,
-                                StrokeThickness = 1,
-                                ToolTip = new ToolTip()
-                                {
-                                    Content = $"Id:{l.Id} Name:{l.Name}",
-                                    Foreground = Brushes.DarkOrchid
-                                }
-                            };
-                            break;
-                        case Direction.RIGHT:
-                            lineSegment = new Line()
-                            {
-                                X1 = 0,
-                                Y1 = 2.5,
-                                X2 = 5,
-                                Y2 = 2.5,
-                                Stroke = Brushes.DarkOrchid,
-                                StrokeThickness = 1,
-                                ToolTip = new ToolTip()
-                                {
-                                    Content = $"Id:{l.Id} Name:{l.Name}",
-                                    Foreground = Brushes.DarkOrchid
-                                }
-                            };
-                            break;
-                        default:
-                            lineSegment = new Line();
-                            break;
+                                Content = $"IntersectionId: Id:{_grid[path[i].Key][path[i].Value].Name}" +
+                                          $" Name:{_grid[path[i].Key][path[i].Value].Name} & " + $"{t.Item3} {t.Item4}",
+                                Foreground = Brushes.Tomato
+                            }
+                        };
+
+                        _grid[path[i].Key][path[i].Value] = r;
+
+                        Canvas.SetBottom(r, path[i].Key * 5);
+                        Canvas.SetLeft(r, path[i].Value * 5);
+
+                        OnlyCanvas.Children.Add(r);
                     }
-
-                    Rectangle r = new Rectangle()
+                    else
                     {
-                    };
+                        Rectangle r = new Rectangle()
+                        {
+                            Name = $"Line{t.Item3}",
+                            Width = 5,
+                            Height = 5,
+                            Fill = Brushes.Orchid,
+                            Stroke = Brushes.Orchid,
+                            ToolTip = new ToolTip()
+                            {
+                                Content = $"Id:{t.Item3} Name:{t.Item4}",
+                                Foreground = Brushes.DarkOrchid
+                            }
+                        };
 
-                    _grid[path[i].Key][path[i].Value] = r;
+                        _grid[path[i].Key][path[i].Value] = r;
 
-                    Canvas.SetBottom(lineSegment, path[i].Key * 5);
-                    Canvas.SetLeft(lineSegment, path[i].Value * 5);
+                        Canvas.SetBottom(r, path[i].Key * 5);
+                        Canvas.SetLeft(r, path[i].Value * 5);
 
-                    OnlyCanvas.Children.Add(lineSegment);
+                        OnlyCanvas.Children.Add(r);
+                    }
                 }
+
+                _printedLines.Add(counter++, new Tuple<long, long>(first, second));
             }
         }
 
-        private List<KeyValuePair<int, int>> BFS(int sRow, int sCol, int dRow, int dCol, string target)
+        private List<KeyValuePair<int, int>> BFS(int sRow, int sCol, int dRow, int dCol, string target, bool secondIteration = false)
         {
             QueueItem source = new QueueItem(sRow, sCol, new List<KeyValuePair<int, int>>());
 
             bool[,] visited = new bool[_dims1, _dims2];
-            for (int i = 0; i < _dims1; i++)
+            if (secondIteration)
             {
-                for (int j = 0; j < _dims2; j++)
+                for (int i = 0; i < _dims1; i++)
                 {
-                    visited[i, j] = _grid[i][j] != null;
+                    for (int j = 0; j < _dims2; j++)
+                    {
+                        if (_grid[i][j] != null)
+                        {
+                            if (_grid[i][j].Name.StartsWith("Line"))
+                            {
+                                visited[i, j] = false;
+                            }
+                            else
+                            {
+                                visited[i, j] = true;
+                            }
+                        }
+                        else
+                        {
+                            visited[i, j] = false;
+                        }
+                    }
                 }
             }
+            else
+            {
+                for (int i = 0; i < _dims1; i++)
+                {
+                    for (int j = 0; j < _dims2; j++)
+                    {
+                        visited[i, j] = _grid[i][j] != null;
+                    }
+                }
+            }
+
             visited[dRow, dCol] = false;
 
             Queue<QueueItem> q = new Queue<QueueItem>();
@@ -615,18 +680,6 @@ namespace Projekat
             }
 
             return new List<KeyValuePair<int, int>>();
-        }
-
-        private Direction DetermineDirection(int pos, List<KeyValuePair<int, int>> path, int lRow, int lCol)
-        {
-            if (pos + 1 == path.Count)
-            {
-                if (path[pos].Key == lRow) return lCol > path[pos].Value ? Direction.RIGHT : Direction.LEFT;
-                return lRow > path[pos].Key ? Direction.UP : Direction.DOWN;
-            }
-
-            if (path[pos + 1].Key == path[pos].Key) return path[pos + 1].Value > path[pos].Value ? Direction.RIGHT : Direction.LEFT;
-            return path[pos + 1].Key > path[pos].Key ? Direction.UP : Direction.DOWN;
         }
 
         #endregion
