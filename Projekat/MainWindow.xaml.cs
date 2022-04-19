@@ -5,10 +5,13 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Xml;
 using Point = Projekat.Model.Point;
+using Brushes = System.Windows.Media.Brushes;
+using Projekat.Views;
 
 namespace Projekat
 {
@@ -53,6 +56,8 @@ namespace Projekat
         private List<NodeEntity> _nodeEntities = new List<NodeEntity>(2043);
         private List<SwitchEntity> _switchEntities = new List<SwitchEntity>(2282);
         private List<LineEntity> _lineEntities = new List<LineEntity>(2336);
+
+        public static Brush _color = Brushes.BurlyWood;
 
         #endregion
 
@@ -107,7 +112,7 @@ namespace Projekat
 
         private void Substations(XmlDocument xmlDoc)
         {
-            
+
             XmlNodeList nodeList = xmlDoc.DocumentElement.SelectNodes("/NetworkModel/Substations/SubstationEntity");
 
             foreach (XmlNode node in nodeList)
@@ -468,7 +473,7 @@ namespace Projekat
             int counter = 0;
 
             FirstIteration(ref counter);
-            SecondIteration(ref counter);
+            //SecondIteration(ref counter);
         }
 
         private void FirstIteration(ref int counter)
@@ -493,13 +498,16 @@ namespace Projekat
                     continue;
                 }
 
+                string firstName = _grid[_printedElements[first].Item1 / 5][_printedElements[first].Item2 / 5].Name;
+                string secondName = _grid[_printedElements[second].Item1 / 5][_printedElements[second].Item2 / 5].Name;
+
                 for (int i = 1; i < path.Count; i++)
                 {
-                    if (_grid[path[i].Key][path[i].Value] != null)
+                    if (_grid[path[i].Key][path[i].Value] == null)
                     {
                         Rectangle r = new Rectangle()
                         {
-                            Name = $"Line{l.Id}",
+                            Name = $"{firstName}_{secondName}",
                             Width = 5,
                             Height = 5,
                             Fill = Brushes.Orchid,
@@ -516,6 +524,7 @@ namespace Projekat
                         Canvas.SetBottom(r, path[i].Key * 5);
                         Canvas.SetLeft(r, path[i].Value * 5);
 
+                        r.MouseRightButtonDown += ChangeColor;
                         OnlyCanvas.Children.Add(r);
                     }
                 }
@@ -591,6 +600,7 @@ namespace Projekat
                         Canvas.SetBottom(r, path[i].Key * 5);
                         Canvas.SetLeft(r, path[i].Value * 5);
 
+                        r.MouseRightButtonDown += ChangeColor;
                         OnlyCanvas.Children.Add(r);
                     }
                 }
@@ -680,6 +690,32 @@ namespace Projekat
             }
 
             return new List<KeyValuePair<int, int>>();
+        }
+
+        private void ChangeColor(object sender, MouseButtonEventArgs e)
+        {
+            string firstName = "", secondName = "";
+            if (e.Source is Rectangle r)
+            {
+                string[] s = r.Name.Split('_');
+                firstName = s[0];
+                secondName = s[1];
+            }
+
+            ColorPicker c = new ColorPicker();
+            c.ShowDialog();
+            for (int i = 0; i < OnlyCanvas.Children.Count; i++)
+            {
+                if (((Rectangle) OnlyCanvas.Children[i]).Name.Equals(firstName))
+                {
+                    ((Rectangle) OnlyCanvas.Children[i]).Fill = _color;
+                    ((Rectangle) OnlyCanvas.Children[i]).Stroke = _color;
+                }
+
+                if (!((Rectangle) OnlyCanvas.Children[i]).Name.Equals(secondName)) continue;
+                ((Rectangle)OnlyCanvas.Children[i]).Fill = _color;
+                ((Rectangle)OnlyCanvas.Children[i]).Stroke = _color;
+            }
         }
 
         #endregion
