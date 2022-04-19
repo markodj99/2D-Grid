@@ -17,8 +17,6 @@
                     <Canvas.LayoutTransform>
                         <ScaleTransform ScaleX="{Binding ElementName=slider, Path=Value}" ScaleY="{Binding ElementName=slider, Path=Value}"/>
                     </Canvas.LayoutTransform>
-
-                    <Rectangle Width="100" Height="100" Name="kurac"></Rectangle>
                 </Canvas>
             </Border>
         </ScrollViewer>

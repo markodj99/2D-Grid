@@ -476,7 +476,7 @@ namespace Projekat
             //SecondIteration(ref counter);
         }
 
-        private void FirstIteration(ref int counter)
+        public void FirstIteration(ref int counter)
         {
             foreach (var l in _lineEntities)
             {
@@ -501,38 +501,40 @@ namespace Projekat
                 string firstName = _grid[_printedElements[first].Item1 / 5][_printedElements[first].Item2 / 5].Name;
                 string secondName = _grid[_printedElements[second].Item1 / 5][_printedElements[second].Item2 / 5].Name;
 
-                for (int i = 1; i < path.Count; i++)
+                Polyline line = new Polyline()
                 {
-                    if (_grid[path[i].Key][path[i].Value] == null)
+                    Name = $"{firstName}_{secondName}",
+                    Stroke = Brushes.Black,
+                    ToolTip = new ToolTip()
                     {
-                        Rectangle r = new Rectangle()
+                        Content = $"Id:{l.Id} Name:{l.Name}",
+                        Foreground = Brushes.DarkOrchid
+                    },
+                };
+                PointCollection col = new PointCollection();
+
+                foreach (var k in path)
+                {
+                    col.Add(new System.Windows.Point(k.Value * 5.0f + 2.5f, OnlyCanvas.Height - k.Key * 5.0f - 2.5f));
+                    if (_grid[k.Key][k.Value] == null)
+                    {
+                        _grid[k.Key][k.Value] = new Rectangle()
                         {
-                            Name = $"{firstName}_{secondName}",
-                            Width = 5,
-                            Height = 5,
-                            Fill = Brushes.Orchid,
-                            Stroke = Brushes.Orchid,
-                            ToolTip = new ToolTip()
-                            {
-                                Content = $"Id:{l.Id} Name:{l.Name}",
-                                Foreground = Brushes.DarkOrchid
-                            }
+                            Name = "Line_ada"
                         };
-
-                        _grid[path[i].Key][path[i].Value] = r;
-
-                        Canvas.SetBottom(r, path[i].Key * 5);
-                        Canvas.SetLeft(r, path[i].Value * 5);
-
-                        r.MouseRightButtonDown += ChangeColor;
-                        OnlyCanvas.Children.Add(r);
                     }
                 }
+                line.Points = col;
+                line.StrokeThickness = 1;
+                line.MouseRightButtonDown += ChangeColor;
+
+                OnlyCanvas.Children.Add(line);
 
                 _printedLines.Add(counter++, new Tuple<long, long>(first, second));
             }
         }
 
+        //TODO: SREDI OVO
         private void SecondIteration(ref int counter)
         {
             foreach (var t in _secondIteration.Values)
@@ -644,7 +646,14 @@ namespace Projekat
                 {
                     for (int j = 0; j < _dims2; j++)
                     {
-                        visited[i, j] = _grid[i][j] != null;
+                        if (_grid[i][j] == null)
+                        {
+                            visited[i, j] = false;
+                        }
+                        else
+                        {
+                            visited[i, j] = true;
+                        }
                     }
                 }
             }
@@ -657,33 +666,30 @@ namespace Projekat
             while (q.Count != 0)
             {
                 QueueItem p = q.Dequeue();
+                p.Path.Add(new KeyValuePair<int, int>(p.Row, p.Col));
 
                 if (_grid[p.Row][p.Col] != null) if (_grid[p.Row][p.Col].Name.Equals(target)) return p.Path;
 
                 if (p.Row - 1 >= 0 && visited[p.Row - 1, p.Col] == false)
                 {
-                    p.Path.Add(new KeyValuePair<int, int>(p.Row, p.Col));
                     q.Enqueue(new QueueItem(p.Row - 1, p.Col, new List<KeyValuePair<int, int>>(p.Path)));
                     visited[p.Row - 1, p.Col] = true;
                 }
 
                 if (p.Row + 1 < _dims1 && visited[p.Row + 1, p.Col] == false)
                 {
-                    p.Path.Add(new KeyValuePair<int, int>(p.Row, p.Col));
                     q.Enqueue(new QueueItem(p.Row + 1, p.Col, new List<KeyValuePair<int, int>>(p.Path)));
                     visited[p.Row + 1, p.Col] = true;
                 }
 
                 if (p.Col - 1 >= 0 && visited[p.Row, p.Col - 1] == false)
                 {
-                    p.Path.Add(new KeyValuePair<int, int>(p.Row, p.Col));
                     q.Enqueue(new QueueItem(p.Row, p.Col - 1, new List<KeyValuePair<int, int>>(p.Path)));
                     visited[p.Row, p.Col - 1] = true;
                 }
 
                 if (p.Col + 1 < _dims2 && visited[p.Row, p.Col + 1] == false)
                 {
-                    p.Path.Add(new KeyValuePair<int, int>(p.Row, p.Col));
                     q.Enqueue(new QueueItem(p.Row, p.Col + 1, new List<KeyValuePair<int, int>>(p.Path)));
                     visited[p.Row, p.Col + 1] = true;
                 }
@@ -695,9 +701,9 @@ namespace Projekat
         private void ChangeColor(object sender, MouseButtonEventArgs e)
         {
             string firstName = "", secondName = "";
-            if (e.Source is Rectangle r)
+            if (e.Source is Polyline l)
             {
-                string[] s = r.Name.Split('_');
+                string[] s = l.Name.Split('_');
                 firstName = s[0];
                 secondName = s[1];
             }
@@ -706,15 +712,18 @@ namespace Projekat
             c.ShowDialog();
             for (int i = 0; i < OnlyCanvas.Children.Count; i++)
             {
-                if (((Rectangle) OnlyCanvas.Children[i]).Name.Equals(firstName))
+                if (!(OnlyCanvas?.Children[i] is Rectangle)) continue;
+                if (((Rectangle)OnlyCanvas.Children[i]).Name.Equals(firstName))
                 {
-                    ((Rectangle) OnlyCanvas.Children[i]).Fill = _color;
-                    ((Rectangle) OnlyCanvas.Children[i]).Stroke = _color;
+                    ((Rectangle)OnlyCanvas.Children[i]).Fill = _color;
+                    ((Rectangle)OnlyCanvas.Children[i]).Stroke = _color;
                 }
 
-                if (!((Rectangle) OnlyCanvas.Children[i]).Name.Equals(secondName)) continue;
-                ((Rectangle)OnlyCanvas.Children[i]).Fill = _color;
-                ((Rectangle)OnlyCanvas.Children[i]).Stroke = _color;
+                if (((Rectangle) OnlyCanvas.Children[i]).Name.Equals(secondName))
+                {
+                    ((Rectangle)OnlyCanvas.Children[i]).Fill = _color;
+                    ((Rectangle)OnlyCanvas.Children[i]).Stroke = _color;
+                }
             }
         }
 
