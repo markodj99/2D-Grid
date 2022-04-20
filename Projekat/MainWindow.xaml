@@ -5,17 +5,33 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Projekat"
         mc:Ignorable="d"
-        Title="Projekat 1" Height="1000" Width="1400">
+        Title="Grid" Height="1000" Width="1400">
     <DockPanel>
-        <Menu x:Name="Menu" Height="30 " DockPanel.Dock="Top" Padding="0,15,0,0">
-            <MenuItem Header="Load Model" Width="100" Click="MenuItem_LoadModel"/>
-        </Menu>
-        <Slider x:Name="slider" Minimum=".1" Maximum="10" Value="1" DockPanel.Dock="Top"/>
+        <Grid DockPanel.Dock="Top" Grid.Row="0" Height="50">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="LoadModel" Grid.Column="0" Click="MenuItem_LoadModel">Load model</Button>
+            <ToggleButton x:Name="BtnEllipse" Grid.Column="1" Checked="BtnEllipse_Checked" Unchecked="BtnEllipse_Unchecked" >Draw Elipse</ToggleButton>
+            <ToggleButton x:Name="BtnPolygon" Grid.Column="2" Checked="BtnPolygon_Checked" Unchecked="BtnPolygon_Unchecked" >Draw Polygon</ToggleButton>
+            <ToggleButton x:Name="BtnText" Grid.Column="3" Unchecked="BtnText_Unchecked" Checked="BtnText_Checked" >Add Text</ToggleButton>
+            <Button x:Name="BtnUndo" Grid.Column="4" Click="BtnUndo_Click" >Undo</Button>
+            <Button x:Name="BtnRedo" Grid.Column="5" Click="BtnRedo_Click" >Redo</Button>
+            <Button x:Name="BtnClearCanvas" Grid.Column="6" Click="BtnClearCanvas_Click">Clear</Button>
+        </Grid>
+
+        <Slider x:Name="Slider" Minimum=".1" Maximum="10" Value="1" DockPanel.Dock="Top"/>
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
             <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Canvas Name="OnlyCanvas" Width="3000" Height="2000">
+                <Canvas Background="AliceBlue" Opacity="99" Name="OnlyCanvas" Width="3000" Height="2000" MouseRightButtonDown="OnlyCanvas_MouseRightButtonDown" MouseLeftButtonDown="OnlyCanvas_MouseLeftButtonDown">
                     <Canvas.LayoutTransform>
-                        <ScaleTransform ScaleX="{Binding ElementName=slider, Path=Value}" ScaleY="{Binding ElementName=slider, Path=Value}"/>
+                        <ScaleTransform ScaleX="{Binding ElementName=Slider, Path=Value}" ScaleY="{Binding ElementName=Slider, Path=Value}"/>
                     </Canvas.LayoutTransform>
                 </Canvas>
             </Border>

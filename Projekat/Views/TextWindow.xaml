@@ -1,0 +1,73 @@
+﻿<Window x:Class="Projekat.Views.TextWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Projekat.Views"
+        mc:Ignorable="d"
+        Title="TextWindow" Height="350" Width="450">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition MinHeight="25"></RowDefinition>
+            <RowDefinition MinHeight="5"></RowDefinition>
+            <RowDefinition MinHeight="25"></RowDefinition>
+            <RowDefinition MinHeight="5"></RowDefinition>
+            <RowDefinition MinHeight="25"></RowDefinition>
+            <RowDefinition MinHeight="5"></RowDefinition>
+            <RowDefinition MinHeight="25"></RowDefinition>
+            <RowDefinition MinHeight="5"></RowDefinition>
+            <RowDefinition MinHeight="25"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition MinWidth="100"></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition MinWidth="200"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+
+
+        <Label Content="TEXT" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"></Label>
+        <Border Grid.Row="0" Grid.Column="1"></Border>
+        <TextBox x:Name="Text" Grid.Row="0" Grid.Column="2" Margin="0 0 10 0"></TextBox>
+
+        <Border Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="3"></Border>
+
+        <Label Content="FONT" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center"></Label>
+        <Border Grid.Row="2" Grid.Column="1"></Border>
+        <TextBox x:Name="Font" Grid.Row="2" Grid.Column="2" Margin="0 0 10 0"></TextBox>
+
+        <Border Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="3"></Border>
+
+        <Label Content="FOREGROUND" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center"></Label>
+        <Border Grid.Row="4" Grid.Column="1"></Border>
+        <ComboBox Grid.Row="4" Grid.Column="2" Name="Foreground" Width="190" Height="50" Margin="0 0 10 0">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <Rectangle Fill="{Binding Name}" Width="16" Height="16" Margin="0,2,5,2" />
+                        <TextBlock Text="{Binding Name}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <Border Grid.Column="0" Grid.Row="5" Grid.ColumnSpan="3"></Border>
+
+        <Label Content="BACKGROUND" Grid.Row="6" Grid.Column="0" VerticalAlignment="Center"></Label>
+        <Border Grid.Row="6" Grid.Column="1"></Border>
+        <ComboBox Grid.Row="6" Grid.Column="2" Name="Background" Width="190" Height="50" Margin="0 0 10 0">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <Rectangle Fill="{Binding Name}" Width="16" Height="16" Margin="0,2,5,2" />
+                        <TextBlock Text="{Binding Name}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <Border Grid.Column="0" Grid.Row="7" Grid.ColumnSpan="3"></Border>
+
+        <Button x:Name="Cancel" Content="Cancel" Grid.Row="8" Grid.Column="0" Margin="0 0 10 10" Click="Cancel_Click"></Button>
+        <Button x:Name="Confirm" Content="Confirm" Grid.Row="8" Grid.Column="2" Margin="0 0 10 10" Click="Confirm_Click"></Button>
+    </Grid>
+</Window>

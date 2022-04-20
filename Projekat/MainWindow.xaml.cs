@@ -1,20 +1,87 @@
 ﻿using Projekat.Model;
+using Projekat.Views;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.ExceptionServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Xml;
-using Point = Projekat.Model.Point;
 using Brushes = System.Windows.Media.Brushes;
-using Projekat.Views;
+using Point = Projekat.Model.Point;
 
 namespace Projekat
 {
+    public class EllipseShape
+    {
+        public double RadiusX { get; set; }
+        public double RadiusY { get; set; }
+        public int Conture { get; set; }
+        public Brush Fill { get; set; }
+        public Brush Border { get; set; }
+        public bool Condition { get; set; }
+
+        public EllipseShape() => Condition = false;
+
+        public EllipseShape(double radiusX, double radiusY, int conture, Brush fill, Brush border, bool condition)
+        {
+            RadiusX = radiusX;
+            RadiusY = radiusY;
+            Conture = conture;
+            Fill = fill;
+            Border = border;
+            Condition = condition;
+        }
+    }
+
+    public class PolygonShape
+    {
+        public int Conture { get; set; }
+        public Brush Fill { get; set; }
+        public Brush Border { get; set; }
+        public bool Condition { get; set; }
+
+        public PolygonShape() => Condition = false;
+
+        public PolygonShape(int conture, Brush fill, Brush border, bool condition)
+        {
+            Conture = conture;
+            Fill = fill;
+            Border = border;
+            Condition = condition;
+        }
+    }
+
+    public class TextShape
+    {
+        public string Text { get; set; }
+        public double Font { get; set; }
+        public Brush Foreground { get; set; }
+        public Brush Background { get; set; }
+        public bool Condition { get; set; }
+
+        public TextShape() => Condition = false;
+
+        public TextShape(string text, double font, Brush foreground, Brush background, bool condition)
+        {
+            Text = text;
+            Font = font;
+            Foreground = foreground;
+            Background = background;
+            Condition = condition;
+        }
+    }
+
+    public enum SelectedShape : int 
+    {
+        None = 0,
+        Ellipse = 1,
+        Polygon = 2,
+        Text = 3
+    }
+
     public class QueueItem
     {
         public int Row { get; set; }
@@ -37,6 +104,8 @@ namespace Projekat
     {
         #region Fields
 
+        #region GridFields
+
         private bool _isLoaded = false;
         private List<List<Rectangle>> _grid;
         private int _dims1, _dims2;
@@ -58,6 +127,19 @@ namespace Projekat
         private List<LineEntity> _lineEntities = new List<LineEntity>(2336);
 
         public static Brush _color = Brushes.BurlyWood;
+
+        #endregion
+
+        #region ShapeFields
+
+        private SelectedShape _selectedShape = SelectedShape.None;
+        private System.Windows.Point _curretnPoint;
+        private List<System.Windows.Point> _polygonPoints = new List<System.Windows.Point>();
+        public static EllipseShape Ellipse = new EllipseShape();
+        public static PolygonShape Polygon = new PolygonShape();
+        public static TextShape Text = new TextShape();
+
+        #endregion
 
         #endregion
 
@@ -745,6 +827,175 @@ namespace Projekat
         }
 
         #endregion
+
+        #endregion
+
+        #region Shapes
+
+        #region Elipse
+
+        private void BtnEllipse_Checked(object sender, RoutedEventArgs e)
+        {
+            if (BtnPolygon.IsChecked == true || BtnText.IsChecked == true) BtnEllipse.IsChecked = false;
+            else _selectedShape = SelectedShape.Ellipse;
+        }
+
+        private void BtnEllipse_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _selectedShape = SelectedShape.None;
+        }
+
+        private void DrawEllipse()
+        {
+            if (!Ellipse.Condition) return;
+
+            Ellipse ellipse = new Ellipse
+            {
+                Width = Ellipse.RadiusX,
+                Height = Ellipse.RadiusY,
+                Fill = Ellipse.Fill,
+                Stroke = Ellipse.Border,
+                StrokeThickness = Ellipse.Conture
+            };
+
+            Canvas.SetTop(ellipse, _curretnPoint.Y);
+            Canvas.SetLeft(ellipse, _curretnPoint.X);
+
+            OnlyCanvas.Children.Add(ellipse);
+
+            //Dodaj posle za izmenu
+            //ellipse.MouseLeftButtonDown += nekametoda
+        }
+
+        #endregion
+
+        #region PolygonWindow
+
+        private void BtnPolygon_Checked(object sender, RoutedEventArgs e)
+        {
+            if (BtnEllipse.IsChecked == true || BtnText.IsChecked == true) BtnPolygon.IsChecked = false;
+            else _selectedShape = SelectedShape.Polygon;
+        }
+
+        private void BtnPolygon_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _selectedShape = SelectedShape.None;
+        }
+
+        private void DrawPolygon()
+        {
+            if (!Polygon.Condition) return;
+
+            Polygon polygon = new Polygon()
+            {
+                Fill = Polygon.Fill,
+                Stroke = Polygon.Border,
+                StrokeThickness = Polygon.Conture
+            };
+
+            foreach (var p in _polygonPoints) polygon.Points.Add(p);
+
+            OnlyCanvas.Children.Add(polygon);
+            _polygonPoints.Clear();
+
+            //Dodaj posle za izmenu
+            //polygon.MouseLeftButtonDown += nekametoda
+        }
+
+        #endregion
+
+        #region TextWindow
+
+        private void BtnText_Checked(object sender, RoutedEventArgs e)
+        {
+            if (BtnPolygon.IsChecked == true || BtnEllipse.IsChecked == true) BtnText.IsChecked = false;
+            else _selectedShape = SelectedShape.Text;
+        }
+
+        private void BtnText_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _selectedShape = SelectedShape.None;
+        }
+
+        private void PrintText()
+        {
+            if (!Text.Condition) return;
+
+            TextBox textBox = new TextBox()
+            {
+                Text = Text.Text,
+                FontSize = Text.Font,
+                Foreground = Text.Foreground,
+                Background = Text.Background,
+                TextAlignment = TextAlignment.Center,
+                IsReadOnly = true
+            };
+
+            Canvas.SetTop(textBox, _curretnPoint.Y);
+            Canvas.SetLeft(textBox, _curretnPoint.X);
+
+            OnlyCanvas.Children.Add(textBox);
+
+            //Dodaj posle za izmenu
+            //textBox.MouseLeftButtonDown += nekametoda
+        }
+
+        #endregion
+
+        #region Canvas
+
+        private void OnlyCanvas_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            _curretnPoint = e.GetPosition(OnlyCanvas);
+
+            switch (_selectedShape)
+            {
+                case SelectedShape.Ellipse:
+                    EllipseWindow ellipseWindow = new EllipseWindow();
+                    ellipseWindow.ShowDialog();
+                    DrawEllipse();
+                    break;
+                case SelectedShape.Polygon:
+                    _polygonPoints.Add(_curretnPoint);
+                    break;
+                case SelectedShape.Text:
+                    TextWindow textWindow = new TextWindow();
+                    textWindow.ShowDialog();
+                    PrintText();
+                    break;
+                case SelectedShape.None: return;
+                default: return;
+            }
+        }
+
+        private void OnlyCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (!(_polygonPoints.Count >= 3 && _selectedShape == SelectedShape.Polygon)) return;
+            PolygonWindow polygonWindow = new PolygonWindow();
+            polygonWindow.ShowDialog();
+            DrawPolygon();
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Commands
+
+        private void BtnUndo_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void BtnRedo_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void BtnClearCanvas_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
 
         #endregion
     }
