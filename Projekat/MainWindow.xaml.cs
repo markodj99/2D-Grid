@@ -89,6 +89,7 @@ namespace Projekat
 
         #region LoadModel
 
+        //TODO: Sredi oblike i tooltipove
         private void MenuItem_LoadModel(object sender, RoutedEventArgs e)
         {
             if (!_isLoaded)
@@ -109,6 +110,8 @@ namespace Projekat
 
             _isLoaded = true;
         }
+
+        #region ParseXML
 
         private void Substations(XmlDocument xmlDoc)
         {
@@ -292,6 +295,10 @@ namespace Projekat
             _coordinates["minLon"] = y.Min();
         }
 
+        #endregion
+
+        #region PrintObjects
+
         private void PrintRectangles()
         {
             //Iz nekog razloga moraju da se zamene X i Y i Height i Width
@@ -468,12 +475,16 @@ namespace Projekat
             }
         }
 
+        #endregion
+
+        #region PrintConnections
+
         private void PrintConnections()
         {
             int counter = 0;
 
             FirstIteration(ref counter);
-            //SecondIteration(ref counter);
+            SecondIteration(ref counter);
         }
 
         public void FirstIteration(ref int counter)
@@ -534,7 +545,6 @@ namespace Projekat
             }
         }
 
-        //TODO: SREDI OVO
         private void SecondIteration(ref int counter)
         {
             foreach (var t in _secondIteration.Values)
@@ -553,59 +563,66 @@ namespace Projekat
 
                 if (path.Count == 0) continue;
 
-                for (int i = 1; i < path.Count; i++)
+                string firstName = _grid[_printedElements[first].Item1 / 5][_printedElements[first].Item2 / 5].Name;
+                string secondName = _grid[_printedElements[second].Item1 / 5][_printedElements[second].Item2 / 5].Name;
+
+                Polyline line = new Polyline()
                 {
-                    if (_grid[path[i].Key][path[i].Value] != null)
+                    Name = $"{firstName}_{secondName}",
+                    Stroke = Brushes.DarkViolet,
+                    ToolTip = new ToolTip()
+                    {
+                        Content = $"Id:{t.Item3} Name:{t.Item4}",
+                        Foreground = Brushes.DarkOrchid
+                    },
+                };
+                PointCollection col = new PointCollection();
+
+                col.Add(new System.Windows.Point(path[0].Value * 5.0f + 2.5f, OnlyCanvas.Height - path[0].Key * 5.0f - 2.5f));
+                for (int i  = 1; i < path.Count - 1; i++)
+                {
+                    col.Add(new System.Windows.Point(path[i].Value * 5.0f + 2.5f, OnlyCanvas.Height - path[i].Key * 5.0f - 2.5f));
+                    if (_grid[path[i].Key][path[i].Value] == null)
+                    {
+                        _grid[path[i].Key][path[i].Value] = new Rectangle()
+                        {
+                            Name = "Line_ada"
+                        };
+                    }
+                    else
                     {
                         OnlyCanvas.Children.Remove(_grid[path[i].Key][path[i].Value]);
 
                         Rectangle r = new Rectangle()
                         {
                             Name = $"Intersection{t.Item3}and{t.Item4}",
-                            Width = 5,
-                            Height = 5,
-                            Fill = Brushes.Tomato,
-                            Stroke = Brushes.Tomato,
+                            Width = 2,
+                            Height = 2,
+                            Fill = Brushes.Red,
+                            Stroke = Brushes.Red,
                             ToolTip = new ToolTip()
                             {
                                 Content = $"IntersectionId: Id:{_grid[path[i].Key][path[i].Value].Name}" +
                                           $" Name:{_grid[path[i].Key][path[i].Value].Name} & " + $"{t.Item3} {t.Item4}",
-                                Foreground = Brushes.Tomato
+                                Foreground = Brushes.Red
                             }
                         };
 
                         _grid[path[i].Key][path[i].Value] = r;
 
-                        Canvas.SetBottom(r, path[i].Key * 5);
-                        Canvas.SetLeft(r, path[i].Value * 5);
+                        Canvas.SetBottom(r, path[i].Key * 5 + 1.5f);
+                        Canvas.SetLeft(r, path[i].Value * 5 + 1.5f);
 
-                        OnlyCanvas.Children.Add(r);
-                    }
-                    else
-                    {
-                        Rectangle r = new Rectangle()
-                        {
-                            Name = $"Line{t.Item3}",
-                            Width = 5,
-                            Height = 5,
-                            Fill = Brushes.Orchid,
-                            Stroke = Brushes.Orchid,
-                            ToolTip = new ToolTip()
-                            {
-                                Content = $"Id:{t.Item3} Name:{t.Item4}",
-                                Foreground = Brushes.DarkOrchid
-                            }
-                        };
-
-                        _grid[path[i].Key][path[i].Value] = r;
-
-                        Canvas.SetBottom(r, path[i].Key * 5);
-                        Canvas.SetLeft(r, path[i].Value * 5);
-
-                        r.MouseRightButtonDown += ChangeColor;
                         OnlyCanvas.Children.Add(r);
                     }
                 }
+                col.Add(new System.Windows.Point(path[path.Count - 1].Value * 5.0f + 2.5f, OnlyCanvas.Height - path[path.Count - 1].Key * 5.0f - 2.5f));
+
+                line.Points = col;
+                line.StrokeThickness = 1;
+                line.MouseRightButtonDown += ChangeColor;
+
+                OnlyCanvas.Children.Add(line);
 
                 _printedLines.Add(counter++, new Tuple<long, long>(first, second));
             }
@@ -726,6 +743,8 @@ namespace Projekat
                 }
             }
         }
+
+        #endregion
 
         #endregion
     }
