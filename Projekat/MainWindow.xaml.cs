@@ -135,9 +135,17 @@ namespace Projekat
         private SelectedShape _selectedShape = SelectedShape.None;
         private System.Windows.Point _curretnPoint;
         private List<System.Windows.Point> _polygonPoints = new List<System.Windows.Point>();
+
         public static EllipseShape Ellipse = new EllipseShape();
         public static PolygonShape Polygon = new PolygonShape();
         public static TextShape Text = new TextShape();
+
+        private Stack<UIElement> _redo = new Stack<UIElement>(20);
+        private Stack<UIElement> _undo = new Stack<UIElement>(20);
+        private Stack<UIElement> _drawnUIElements = new Stack<UIElement>(20);
+
+        private bool _flag = false;
+        private int _count = 0;
 
         #endregion
 
@@ -837,7 +845,11 @@ namespace Projekat
         private void BtnEllipse_Checked(object sender, RoutedEventArgs e)
         {
             if (BtnPolygon.IsChecked == true || BtnText.IsChecked == true) BtnEllipse.IsChecked = false;
-            else _selectedShape = SelectedShape.Ellipse;
+            else
+            {
+                _selectedShape = SelectedShape.Ellipse;
+                _polygonPoints.Clear();
+            }
         }
 
         private void BtnEllipse_Unchecked(object sender, RoutedEventArgs e)
@@ -863,6 +875,10 @@ namespace Projekat
 
             OnlyCanvas.Children.Add(ellipse);
 
+            BtnEllipse.IsChecked = false;
+            _selectedShape = SelectedShape.None;
+
+            _drawnUIElements.Push(ellipse);
             //Dodaj posle za izmenu
             //ellipse.MouseLeftButtonDown += nekametoda
         }
@@ -874,7 +890,11 @@ namespace Projekat
         private void BtnPolygon_Checked(object sender, RoutedEventArgs e)
         {
             if (BtnEllipse.IsChecked == true || BtnText.IsChecked == true) BtnPolygon.IsChecked = false;
-            else _selectedShape = SelectedShape.Polygon;
+            else
+            {
+                _selectedShape = SelectedShape.Polygon;
+                _polygonPoints.Clear();
+            }
         }
 
         private void BtnPolygon_Unchecked(object sender, RoutedEventArgs e)
@@ -896,7 +916,12 @@ namespace Projekat
             foreach (var p in _polygonPoints) polygon.Points.Add(p);
 
             OnlyCanvas.Children.Add(polygon);
+
             _polygonPoints.Clear();
+            BtnPolygon.IsChecked = false;
+            _selectedShape = SelectedShape.None;
+
+            _drawnUIElements.Push(polygon);
 
             //Dodaj posle za izmenu
             //polygon.MouseLeftButtonDown += nekametoda
@@ -909,7 +934,11 @@ namespace Projekat
         private void BtnText_Checked(object sender, RoutedEventArgs e)
         {
             if (BtnPolygon.IsChecked == true || BtnEllipse.IsChecked == true) BtnText.IsChecked = false;
-            else _selectedShape = SelectedShape.Text;
+            else
+            {
+                _selectedShape = SelectedShape.Text;
+                _polygonPoints.Clear();
+            }
         }
 
         private void BtnText_Unchecked(object sender, RoutedEventArgs e)
@@ -938,6 +967,11 @@ namespace Projekat
 
             //Dodaj posle za izmenu
             //textBox.MouseLeftButtonDown += nekametoda
+
+            BtnText.IsChecked = false;
+            _selectedShape = SelectedShape.None;
+
+            _drawnUIElements.Push(textBox);
         }
 
         #endregion
@@ -984,17 +1018,45 @@ namespace Projekat
 
         private void BtnUndo_Click(object sender, RoutedEventArgs e)
         {
-
+            if (_flag)
+            {
+                for (int i = 0; i < _count; i++)
+                {
+                    var element = _undo.Pop();
+                    OnlyCanvas.Children.Add(element);
+                    _drawnUIElements.Push(element);
+                }
+                _flag = false;
+                _count = 0;
+            }
+            else
+            {
+                if (OnlyCanvas.Children.Count < 1) return;
+                _redo.Push((OnlyCanvas.Children[OnlyCanvas.Children.Count - 1]));
+                OnlyCanvas.Children.RemoveAt(OnlyCanvas.Children.Count - 1);
+                _drawnUIElements.Pop();
+            }
         }
 
         private void BtnRedo_Click(object sender, RoutedEventArgs e)
         {
-
+            if (_flag) return;
+            if (_redo.Count < 1) return;
+            var element = _redo.Pop();
+            OnlyCanvas.Children.Add(element);
+            _drawnUIElements.Push(element);
         }
 
         private void BtnClearCanvas_Click(object sender, RoutedEventArgs e)
         {
-
+            if (_flag) return;
+            _count = _drawnUIElements.Count;
+            while (_drawnUIElements.Count > 0)
+            {
+                _undo.Push(_drawnUIElements.Pop());
+                OnlyCanvas.Children.RemoveAt(OnlyCanvas.Children.Count - 1);
+                _flag = true;
+            }
         }
 
         #endregion
