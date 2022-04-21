@@ -100,6 +100,10 @@ namespace Projekat
         }
     }
 
+    //TODO: Sredi oblike i tooltipove i te gluposti
+    //TODO: Premesti klase u modele
+    //TODO: Da mogu da se izmene nacrtani objekti, eventualno tekst
+    //TODO: Viewovi svi da se srede
     public partial class MainWindow : Window
     {
         #region Fields
@@ -179,7 +183,6 @@ namespace Projekat
 
         #region LoadModel
 
-        //TODO: Sredi oblike i tooltipove
         private void MenuItem_LoadModel(object sender, RoutedEventArgs e)
         {
             if (!_isLoaded)
