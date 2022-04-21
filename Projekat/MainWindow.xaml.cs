@@ -1031,7 +1031,7 @@ namespace Projekat
             }
             else
             {
-                if (OnlyCanvas.Children.Count < 1) return;
+                if (_drawnUIElements.Count < 1) return;
                 _redo.Push((OnlyCanvas.Children[OnlyCanvas.Children.Count - 1]));
                 OnlyCanvas.Children.RemoveAt(OnlyCanvas.Children.Count - 1);
                 _drawnUIElements.Pop();
