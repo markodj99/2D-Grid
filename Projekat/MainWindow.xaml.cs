@@ -11,97 +11,11 @@ using System.Windows.Shapes;
 using System.Xml;
 using Brushes = System.Windows.Media.Brushes;
 using Point = Projekat.Model.Point;
+using Projekat.Utils;
+using Projekat.Utils.Enums;
 
 namespace Projekat
 {
-    public class EllipseShape
-    {
-        public double RadiusX { get; set; }
-        public double RadiusY { get; set; }
-        public int Conture { get; set; }
-        public Brush Fill { get; set; }
-        public Brush Border { get; set; }
-        public bool Condition { get; set; }
-
-        public EllipseShape() => Condition = false;
-
-        public EllipseShape(double radiusX, double radiusY, int conture, Brush fill, Brush border, bool condition)
-        {
-            RadiusX = radiusX;
-            RadiusY = radiusY;
-            Conture = conture;
-            Fill = fill;
-            Border = border;
-            Condition = condition;
-        }
-    }
-
-    public class PolygonShape
-    {
-        public int Conture { get; set; }
-        public Brush Fill { get; set; }
-        public Brush Border { get; set; }
-        public bool Condition { get; set; }
-
-        public PolygonShape() => Condition = false;
-
-        public PolygonShape(int conture, Brush fill, Brush border, bool condition)
-        {
-            Conture = conture;
-            Fill = fill;
-            Border = border;
-            Condition = condition;
-        }
-    }
-
-    public class TextShape
-    {
-        public string Text { get; set; }
-        public double Font { get; set; }
-        public Brush Foreground { get; set; }
-        public Brush Background { get; set; }
-        public bool Condition { get; set; }
-
-        public TextShape() => Condition = false;
-
-        public TextShape(string text, double font, Brush foreground, Brush background, bool condition)
-        {
-            Text = text;
-            Font = font;
-            Foreground = foreground;
-            Background = background;
-            Condition = condition;
-        }
-    }
-
-    public enum SelectedShape : int 
-    {
-        None = 0,
-        Ellipse = 1,
-        Polygon = 2,
-        Text = 3
-    }
-
-    public class QueueItem
-    {
-        public int Row { get; set; }
-        public int Col { get; set; }
-        public List<KeyValuePair<int, int>> Path { get; set; }
-
-        public QueueItem()
-        {
-            Row = Col = 0;
-            Path = new List<KeyValuePair<int, int>>();
-        }
-
-        public QueueItem(int row, int col, List<KeyValuePair<int, int>> path)
-        {
-            Row = row; Col = col; Path = path;
-        }
-    }
-
-    //TODO: Sredi oblike i tooltipove i te gluposti
-    //TODO: Premesti klase u modele
     //TODO: Da mogu da se izmene nacrtani objekti, eventualno tekst
     //TODO: Viewovi svi da se srede
     public partial class MainWindow : Window
@@ -114,10 +28,10 @@ namespace Projekat
         private List<List<Rectangle>> _grid;
         private int _dims1, _dims2;
         private double _noviX = 0, _noviY = 0;
-        private Dictionary<long, Tuple<long, long>> _printedLines = new Dictionary<long, Tuple<long, long>>();
+        private Dictionary<long, Tuple<long, long>> _drawnLines = new Dictionary<long, Tuple<long, long>>();
         private Dictionary<long, Tuple<long, long, long, string>> _secondIteration = new Dictionary<long, Tuple<long, long, long, string>>();
 
-        private Dictionary<long, Tuple<int, int>> _printedElements = new Dictionary<long, Tuple<int, int>>(67 + 2043 + 2282);
+        private Dictionary<long, Tuple<int, int>> _drawnObjects = new Dictionary<long, Tuple<int, int>>(67 + 2043 + 2282);
 
         private Dictionary<string, double> _coordinates = new Dictionary<string, double>(4)
         {
@@ -197,8 +111,8 @@ namespace Projekat
 
                 FindMaxMinX_Y();
 
-                PrintRectangles();
-                PrintConnections();
+                DrawObjects();
+                DrawConnections();
             }
 
             _isLoaded = true;
@@ -228,7 +142,7 @@ namespace Projekat
             }
         }
 
-        public void Nodes(XmlDocument xmlDoc)
+        private void Nodes(XmlDocument xmlDoc)
         {
             XmlNodeList nodeList = xmlDoc.DocumentElement.SelectNodes("/NetworkModel/Nodes/NodeEntity");
 
@@ -249,7 +163,7 @@ namespace Projekat
             }
         }
 
-        public void Switches(XmlDocument xmlDoc)
+        private void Switches(XmlDocument xmlDoc)
         {
             XmlNodeList nodeList = xmlDoc.DocumentElement.SelectNodes("/NetworkModel/Switches/SwitchEntity");
 
@@ -271,7 +185,7 @@ namespace Projekat
             }
         }
 
-        public void Routes(XmlDocument xmlDoc)
+        private void Routes(XmlDocument xmlDoc)
         {
             XmlNodeList nodeList = xmlDoc.DocumentElement.SelectNodes("/NetworkModel/Lines/LineEntity");
 
@@ -309,7 +223,7 @@ namespace Projekat
             }
         }
 
-        public void ToLatLon(double utmX, double utmY, int zoneUTM, out double latitude, out double longitude)
+        private void ToLatLon(double utmX, double utmY, int zoneUTM, out double latitude, out double longitude)
         {
             bool isNorthHemisphere = true;
 
@@ -350,7 +264,7 @@ namespace Projekat
             latitude = ((lat + (1 + e2cuadrada * Math.Pow(Math.Cos(lat), 2) - (3.0 / 2.0) * e2cuadrada * Math.Sin(lat) * Math.Cos(lat) * (tao - lat)) * (tao - lat)) * (180.0 / Math.PI)) + diflat;
         }
 
-        public void FindMaxMinX_Y()
+        private void FindMaxMinX_Y()
         {
             List<double> x = new List<double>(67 + 2043 + 2282 + 2336);
             List<double> y = new List<double>(67 + 2043 + 2282 + 2336);
@@ -390,20 +304,20 @@ namespace Projekat
 
         #endregion
 
-        #region PrintObjects
+        #region DrawObjects
 
-        private void PrintRectangles()
+        private void DrawObjects()
         {
             //Iz nekog razloga moraju da se zamene X i Y i Height i Width
             double ratioX = (_coordinates["maxLat"] - _coordinates["minLat"]) / OnlyCanvas.Height;
             double ratioY = (_coordinates["maxLon"] - _coordinates["minLon"]) / OnlyCanvas.Width;
 
-            PrintSubstations(ratioX, ratioY);
-            PrintNodes(ratioX, ratioY);
-            PrintSwitches(ratioX, ratioY);
+            DrawSubstations(ratioX, ratioY);
+            DrawNodes(ratioX, ratioY);
+            DrawSwitches(ratioX, ratioY);
         }
 
-        private void PrintSubstations(double ratioX, double ratioY)
+        private void DrawSubstations(double ratioX, double ratioY)
         {
             foreach (var s in _substationEntities)
             {
@@ -412,11 +326,11 @@ namespace Projekat
                     Name = $"Substation{s.Id}",
                     Width = 5,
                     Height = 5,
-                    Fill = Brushes.Black,
+                    Fill = Brushes.Blue,
                     Stroke = Brushes.Blue,
                     ToolTip = new ToolTip()
                     {
-                        Content = $"Substation Id:{s.Id} Name:{s.Name}",
+                        Content = $"Substation Entity\nId: {s.Id}\nName: {s.Name}",
                         Foreground = Brushes.Blue
                     }
                 };
@@ -428,11 +342,11 @@ namespace Projekat
                 Canvas.SetLeft(r, coordinates.Value);
 
                 OnlyCanvas.Children.Add(r);
-                _printedElements.Add(s.Id, new Tuple<int, int>(coordinates.Key, coordinates.Value));
+                _drawnObjects.Add(s.Id, new Tuple<int, int>(coordinates.Key, coordinates.Value));
             }
         }
 
-        private void PrintNodes(double ratioX, double ratioY)
+        private void DrawNodes(double ratioX, double ratioY)
         {
             foreach (var n in _nodeEntities)
             {
@@ -441,11 +355,11 @@ namespace Projekat
                     Name = $"Node{n.Id}",
                     Width = 5,
                     Height = 5,
-                    Fill = Brushes.Black,
+                    Fill = Brushes.Red,
                     Stroke = Brushes.Red,
                     ToolTip = new ToolTip()
                     {
-                        Content = $"Node Id:{n.Id} Name:{n.Name}",
+                        Content = $"Node Entity\nId: {n.Id}\nName: {n.Name}",
                         Foreground = Brushes.Red
                     }
                 };
@@ -457,11 +371,11 @@ namespace Projekat
                 Canvas.SetLeft(r, coordinates.Value);
 
                 OnlyCanvas.Children.Add(r);
-                _printedElements.Add(n.Id, new Tuple<int, int>(coordinates.Key, coordinates.Value));
+                _drawnObjects.Add(n.Id, new Tuple<int, int>(coordinates.Key, coordinates.Value));
             }
         }
 
-        private void PrintSwitches(double ratioX, double ratioY)
+        private void DrawSwitches(double ratioX, double ratioY)
         {
 
             foreach (var s in _switchEntities)
@@ -471,11 +385,11 @@ namespace Projekat
                     Name = $"Switch{s.Id}",
                     Width = 5,
                     Height = 5,
-                    Fill = Brushes.Black,
+                    Fill = Brushes.Green,
                     Stroke = Brushes.Green,
                     ToolTip = new ToolTip()
                     {
-                        Content = $"Switch Id:{s.Id} Name:{s.Name}",
+                        Content = $"Switch Entity\nId: {s.Id}\nName: {s.Name}",
                         Foreground = Brushes.Green
                     }
                 };
@@ -487,7 +401,7 @@ namespace Projekat
                 Canvas.SetLeft(r, coordinates.Value);
 
                 OnlyCanvas.Children.Add(r);
-                _printedElements.Add(s.Id, new Tuple<int, int>(coordinates.Key, coordinates.Value));
+                _drawnObjects.Add(s.Id, new Tuple<int, int>(coordinates.Key, coordinates.Value));
             }
         }
 
@@ -570,9 +484,9 @@ namespace Projekat
 
         #endregion
 
-        #region PrintConnections
+        #region DrawConnections
 
-        private void PrintConnections()
+        private void DrawConnections()
         {
             int counter = 0;
 
@@ -586,15 +500,15 @@ namespace Projekat
             {
                 long first = l.FirstEnd, second = l.SecondEnd;
 
-                if (!_printedElements.ContainsKey(first)) continue;
-                if (!_printedElements.ContainsKey(second)) continue;
+                if (!_drawnObjects.ContainsKey(first)) continue;
+                if (!_drawnObjects.ContainsKey(second)) continue;
 
-                if (_printedLines.ContainsValue(new Tuple<long, long>(first, second))
-                   || _printedLines.ContainsValue(new Tuple<long, long>(second, first))) continue;
+                if (_drawnLines.ContainsValue(new Tuple<long, long>(first, second))
+                   || _drawnLines.ContainsValue(new Tuple<long, long>(second, first))) continue;
 
-                var path = BFS(_printedElements[first].Item1 / 5, _printedElements[first].Item2 / 5,
-                    _printedElements[second].Item1 / 5, _printedElements[second].Item2 / 5,
-                    _grid[_printedElements[second].Item1 / 5][_printedElements[second].Item2 / 5].Name);
+                var path = BFS(_drawnObjects[first].Item1 / 5, _drawnObjects[first].Item2 / 5,
+                    _drawnObjects[second].Item1 / 5, _drawnObjects[second].Item2 / 5,
+                    _grid[_drawnObjects[second].Item1 / 5][_drawnObjects[second].Item2 / 5].Name);
 
                 if (path.Count == 0)
                 {
@@ -602,18 +516,18 @@ namespace Projekat
                     continue;
                 }
 
-                string firstName = _grid[_printedElements[first].Item1 / 5][_printedElements[first].Item2 / 5].Name;
-                string secondName = _grid[_printedElements[second].Item1 / 5][_printedElements[second].Item2 / 5].Name;
+                string firstName = _grid[_drawnObjects[first].Item1 / 5][_drawnObjects[first].Item2 / 5].Name;
+                string secondName = _grid[_drawnObjects[second].Item1 / 5][_drawnObjects[second].Item2 / 5].Name;
 
                 Polyline line = new Polyline()
                 {
                     Name = $"{firstName}_{secondName}",
-                    Stroke = Brushes.Black,
+                    Stroke = Brushes.Purple,
                     ToolTip = new ToolTip()
                     {
-                        Content = $"Id:{l.Id} Name:{l.Name}",
-                        Foreground = Brushes.DarkOrchid
-                    },
+                        Content = $"Line Entity\nId: {l.Id}\nName:{l.Name}",
+                        Foreground = Brushes.Purple
+                    }
                 };
                 PointCollection col = new PointCollection();
 
@@ -634,7 +548,7 @@ namespace Projekat
 
                 OnlyCanvas.Children.Add(line);
 
-                _printedLines.Add(counter++, new Tuple<long, long>(first, second));
+                _drawnLines.Add(counter++, new Tuple<long, long>(first, second));
             }
         }
 
@@ -644,32 +558,34 @@ namespace Projekat
             {
                 long first = t.Item1, second = t.Item2;
 
-                if (!_printedElements.ContainsKey(first)) continue;
-                if (!_printedElements.ContainsKey(second)) continue;
+                if (!_drawnObjects.ContainsKey(first)) continue;
+                if (!_drawnObjects.ContainsKey(second)) continue;
 
-                if (_printedLines.ContainsValue(new Tuple<long, long>(first, second))
-                    || _printedLines.ContainsValue(new Tuple<long, long>(second, first))) continue;
+                if (_drawnLines.ContainsValue(new Tuple<long, long>(first, second))
+                    || _drawnLines.ContainsValue(new Tuple<long, long>(second, first))) continue;
 
-                var path = BFS(_printedElements[first].Item1 / 5, _printedElements[first].Item2 / 5,
-                    _printedElements[second].Item1 / 5, _printedElements[second].Item2 / 5,
-                    _grid[_printedElements[second].Item1 / 5][_printedElements[second].Item2 / 5].Name, true);
+                var path = BFS(_drawnObjects[first].Item1 / 5, _drawnObjects[first].Item2 / 5,
+                    _drawnObjects[second].Item1 / 5, _drawnObjects[second].Item2 / 5,
+                    _grid[_drawnObjects[second].Item1 / 5][_drawnObjects[second].Item2 / 5].Name, true);
 
                 if (path.Count == 0) continue;
 
-                string firstName = _grid[_printedElements[first].Item1 / 5][_printedElements[first].Item2 / 5].Name;
-                string secondName = _grid[_printedElements[second].Item1 / 5][_printedElements[second].Item2 / 5].Name;
+                string firstName = _grid[_drawnObjects[first].Item1 / 5][_drawnObjects[first].Item2 / 5].Name;
+                string secondName = _grid[_drawnObjects[second].Item1 / 5][_drawnObjects[second].Item2 / 5].Name;
 
                 Polyline line = new Polyline()
                 {
                     Name = $"{firstName}_{secondName}",
-                    Stroke = Brushes.DarkViolet,
+                    Stroke = Brushes.CornflowerBlue,
                     ToolTip = new ToolTip()
                     {
-                        Content = $"Id:{t.Item3} Name:{t.Item4}",
-                        Foreground = Brushes.DarkOrchid
+                        Content = $"Line Entity\nId: {t.Item3}\nName: {t.Item4}",
+                        Foreground = Brushes.CornflowerBlue
                     },
                 };
                 PointCollection col = new PointCollection();
+
+                var intersection = new List<Tuple<Rectangle, double, double>>(20);
 
                 col.Add(new System.Windows.Point(path[0].Value * 5.0f + 2.5f, OnlyCanvas.Height - path[0].Key * 5.0f - 2.5f));
                 for (int i  = 1; i < path.Count - 1; i++)
@@ -688,25 +604,19 @@ namespace Projekat
 
                         Rectangle r = new Rectangle()
                         {
-                            Name = $"Intersection{t.Item3}and{t.Item4}",
+                            Name = "Intersection",
                             Width = 2,
                             Height = 2,
-                            Fill = Brushes.Red,
-                            Stroke = Brushes.Red,
+                            Fill = Brushes.Black,
+                            Stroke = Brushes.Black,
                             ToolTip = new ToolTip()
                             {
-                                Content = $"IntersectionId: Id:{_grid[path[i].Key][path[i].Value].Name}" +
-                                          $" Name:{_grid[path[i].Key][path[i].Value].Name} & " + $"{t.Item3} {t.Item4}",
-                                Foreground = Brushes.Red
+                                Content = "Intersection",
+                                Foreground = Brushes.Black
                             }
                         };
-
+                        intersection.Add(new Tuple<Rectangle, double, double>(r, path[i].Key * 5 + 1.5f, path[i].Value * 5 + 1.5f));
                         _grid[path[i].Key][path[i].Value] = r;
-
-                        Canvas.SetBottom(r, path[i].Key * 5 + 1.5f);
-                        Canvas.SetLeft(r, path[i].Value * 5 + 1.5f);
-
-                        OnlyCanvas.Children.Add(r);
                     }
                 }
                 col.Add(new System.Windows.Point(path[path.Count - 1].Value * 5.0f + 2.5f, OnlyCanvas.Height - path[path.Count - 1].Key * 5.0f - 2.5f));
@@ -717,7 +627,15 @@ namespace Projekat
 
                 OnlyCanvas.Children.Add(line);
 
-                _printedLines.Add(counter++, new Tuple<long, long>(first, second));
+                foreach (var v in intersection)
+                {
+                    Canvas.SetBottom(v.Item1, v.Item2);
+                    Canvas.SetLeft(v.Item1, v.Item3);
+
+                    OnlyCanvas.Children.Add(v.Item1);
+                }
+
+                _drawnLines.Add(counter++, new Tuple<long, long>(first, second));
             }
         }
 
@@ -808,6 +726,8 @@ namespace Projekat
             return new List<KeyValuePair<int, int>>();
         }
 
+        #endregion
+
         private void ChangeColor(object sender, MouseButtonEventArgs e)
         {
             string firstName = "", secondName = "";
@@ -820,6 +740,7 @@ namespace Projekat
 
             ColorPicker c = new ColorPicker();
             c.ShowDialog();
+            if (_color == null) return;
             for (int i = 0; i < OnlyCanvas.Children.Count; i++)
             {
                 if (!(OnlyCanvas?.Children[i] is Rectangle)) continue;
@@ -836,8 +757,6 @@ namespace Projekat
                 }
             }
         }
-
-        #endregion
 
         #endregion
 

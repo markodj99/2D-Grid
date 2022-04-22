@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Projekat"
         mc:Ignorable="d"
-        Title="Grid" Height="1000" Width="1400">
+        Height="1000" Width="1400">
     <DockPanel>
-        <Grid DockPanel.Dock="Top" Grid.Row="0" Height="50">
+        <Grid DockPanel.Dock="Top" Height="50">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="1*"/>
@@ -25,7 +25,6 @@
             <Button x:Name="BtnRedo" Grid.Column="5" Click="BtnRedo_Click" >Redo</Button>
             <Button x:Name="BtnClearCanvas" Grid.Column="6" Click="BtnClearCanvas_Click">Clear</Button>
         </Grid>
-
         <Slider x:Name="Slider" Minimum=".1" Maximum="10" Value="1" DockPanel.Dock="Top"/>
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
             <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">

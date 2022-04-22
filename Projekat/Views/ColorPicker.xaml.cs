@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -17,14 +18,22 @@ namespace Projekat.Views
             Colors.ItemsSource = typeof(Brushes).GetProperties();
         }
 
-        private void Colors_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            MainWindow._color = (Brush)(Colors.SelectedItem as PropertyInfo)?.GetValue(null, null);
-        }
-
         private void ButtonConfirm_Click(object sender, RoutedEventArgs e)
         {
+            if (!Validate()) return;
+            MainWindow._color = (Brush)(Colors.SelectedItem as PropertyInfo)?.GetValue(null, null);
             this.Close();
+        }
+
+        private void ButtonCancel_Click(object sender, RoutedEventArgs e)
+        {
+            MainWindow._color = null;
+            this.Close();
+        }
+
+        private bool Validate()
+        {
+            return !String.IsNullOrEmpty(Colors.Text);
         }
     }
 }

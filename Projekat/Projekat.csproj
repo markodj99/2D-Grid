@@ -55,6 +55,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Utils\EllipseShape.cs" />
+    <Compile Include="Utils\Enums\SelectedShape.cs" />
+    <Compile Include="Utils\PolygonShape.cs" />
+    <Compile Include="Utils\QueueItem.cs" />
+    <Compile Include="Utils\TextShape.cs" />
     <Compile Include="Views\ColorPicker.xaml.cs">
       <DependentUpon>ColorPicker.xaml</DependentUpon>
     </Compile>
