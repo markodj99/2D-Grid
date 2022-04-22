@@ -6,6 +6,9 @@
         xmlns:local="clr-namespace:Projekat"
         mc:Ignorable="d"
         Height="1000" Width="1400">
+    <Window.Icon>
+        <DrawingImage/>
+    </Window.Icon>
     <DockPanel>
         <Grid DockPanel.Dock="Top" Height="50">
             <Grid.ColumnDefinitions>

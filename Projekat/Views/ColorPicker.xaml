@@ -5,15 +5,18 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Projekat.Views"
         mc:Ignorable="d"
-        Height="120" Width="340">
+        Height="100" Width="300">
+    <Window.Icon>
+        <DrawingImage/>
+    </Window.Icon>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="1*"></RowDefinition>
             <RowDefinition Height="1*"></RowDefinition>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="150"></ColumnDefinition>
-            <ColumnDefinition Width="1*"></ColumnDefinition>
+            <ColumnDefinition Width="120"></ColumnDefinition>
+            <ColumnDefinition Width="180"></ColumnDefinition>
         </Grid.ColumnDefinitions>
 
         <Label Content="Color:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center"></Label>

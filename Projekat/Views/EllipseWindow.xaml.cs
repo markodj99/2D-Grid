@@ -34,7 +34,7 @@ namespace Projekat.Views
         private void Confirm_Click(object sender, RoutedEventArgs e)
         {
             if (!Validate()) return;
-            MainWindow.Ellipse = new EllipseShape(_radiusX, _radiusY, _conture,
+            MainWindow.Ellipse = new EllipseShape(Math.Abs(_radiusX), Math.Abs(_radiusY), Math.Abs(_conture),
                 (Brush) (FillColor.SelectedItem as PropertyInfo)?.GetValue(null, null),
                 (Brush) (BorderColor.SelectedItem as PropertyInfo)?.GetValue(null, null), true);
             this.Close();
@@ -43,20 +43,15 @@ namespace Projekat.Views
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
             MainWindow.Ellipse.Condition = false;
-
             this.Close();
         }
 
         private bool Validate()
         {
             if (!Double.TryParse(RadiusX.Text, out _radiusX)) return false;
-
             if (!Double.TryParse(RadiusY.Text, out _radiusY)) return false;
-
             if (!Int32.TryParse(ContureLine.Text, out _conture)) return false;
-
             if (String.IsNullOrEmpty(FillColor.Text)) return false;
-
             if (String.IsNullOrEmpty(BorderColor.Text)) return false;
 
             return true;

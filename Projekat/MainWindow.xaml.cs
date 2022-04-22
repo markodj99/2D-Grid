@@ -17,7 +17,6 @@ using Projekat.Utils.Enums;
 namespace Projekat
 {
     //TODO: Da mogu da se izmene nacrtani objekti, eventualno tekst
-    //TODO: Viewovi svi da se srede
     public partial class MainWindow : Window
     {
         #region Fields

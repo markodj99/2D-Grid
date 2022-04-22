@@ -33,7 +33,7 @@ namespace Projekat.Views
         private void Confirm_Click(object sender, RoutedEventArgs e)
         {
             if (!Validate()) return;
-            MainWindow.Polygon = new PolygonShape(_conture,
+            MainWindow.Polygon = new PolygonShape(Math.Abs(_conture),
                 (Brush)(FillColor.SelectedItem as PropertyInfo)?.GetValue(null, null),
                 (Brush)(BorderColor.SelectedItem as PropertyInfo)?.GetValue(null, null), true);
             this.Close();

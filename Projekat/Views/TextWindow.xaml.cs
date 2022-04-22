@@ -33,7 +33,7 @@ namespace Projekat.Views
         private void Confirm_Click(object sender, RoutedEventArgs e)
         {
             if (!Validate()) return;
-            MainWindow.Text = new TextShape(Text.Text, _font,
+            MainWindow.Text = new TextShape(Text.Text, Math.Abs(_font),
                 (Brush)(Foreground.SelectedItem as PropertyInfo)?.GetValue(null, null),
                 (Brush)(Background.SelectedItem as PropertyInfo)?.GetValue(null, null), true);
             this.Close();
