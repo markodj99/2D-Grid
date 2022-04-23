@@ -31,6 +31,26 @@ namespace Projekat.Views
             BorderColor.ItemsSource = typeof(Brushes).GetProperties();
         }
 
+        public EllipseWindow(double radiusX, double radiusY, int conture, string fill, string border)
+        {
+            InitializeComponent();
+            FillColor.ItemsSource = typeof(Brushes).GetProperties();
+            BorderColor.ItemsSource = typeof(Brushes).GetProperties();
+
+            RadiusX.Text = radiusX.ToString();
+            RadiusX.IsReadOnly = true;
+
+            RadiusY.Text = radiusY.ToString();
+            RadiusY.IsReadOnly = true;
+
+            ContureLine.Text = conture.ToString();
+
+            BrushConverter converter = new BrushConverter();
+            var s = (SolidColorBrush) new BrushConverter().ConvertFromString(fill);
+            FillColor.SelectedItem = s.Clone();
+            FillColor.SelectedValue = (Brush)converter.ConvertFromString(border);
+        }
+
         private void Confirm_Click(object sender, RoutedEventArgs e)
         {
             if (!Validate()) return;

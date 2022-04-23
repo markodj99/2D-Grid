@@ -30,6 +30,19 @@ namespace Projekat.Views
             Background.ItemsSource = typeof(Brushes).GetProperties();
         }
 
+        public TextWindow(string text, double font, Brush foreground, Brush background)
+        {
+            InitializeComponent();
+            Foreground.ItemsSource = typeof(Brushes).GetProperties();
+            Background.ItemsSource = typeof(Brushes).GetProperties();
+
+            Text.Text = text;
+            Font.Text = font.ToString();
+            Foreground.Text = foreground.ToString();
+            Background.Text = background.ToString();
+        }
+
+
         private void Confirm_Click(object sender, RoutedEventArgs e)
         {
             if (!Validate()) return;

@@ -30,6 +30,13 @@ namespace Projekat.Views
             BorderColor.ItemsSource = typeof(Brushes).GetProperties();
         }
 
+        public PolygonWindow(int conture, Brush fill, Brush border)
+        {
+            InitializeComponent();
+            FillColor.ItemsSource = typeof(Brushes).GetProperties();
+            BorderColor.ItemsSource = typeof(Brushes).GetProperties();
+        }
+
         private void Confirm_Click(object sender, RoutedEventArgs e)
         {
             if (!Validate()) return;

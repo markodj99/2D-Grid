@@ -63,6 +63,7 @@ namespace Projekat
 
         private bool _flag = false;
         private int _count = 0;
+        private int _id = 0;
 
         #endregion
 
@@ -784,12 +785,15 @@ namespace Projekat
 
             Ellipse ellipse = new Ellipse
             {
+                Name = $"Ellipse{_id++}",
                 Width = Ellipse.RadiusX,
                 Height = Ellipse.RadiusY,
                 Fill = Ellipse.Fill,
                 Stroke = Ellipse.Border,
                 StrokeThickness = Ellipse.Conture
             };
+
+            ellipse.MouseLeftButtonDown += EditEllipse;
 
             Canvas.SetTop(ellipse, _curretnPoint.Y);
             Canvas.SetLeft(ellipse, _curretnPoint.X);
@@ -800,8 +804,33 @@ namespace Projekat
             _selectedShape = SelectedShape.None;
 
             _drawnUIElements.Push(ellipse);
-            //Dodaj posle za izmenu
-            //ellipse.MouseLeftButtonDown += nekametoda
+        }
+
+        private void EditEllipse(object sender, MouseButtonEventArgs e)
+        {
+            if (!(e.Source is Ellipse el)) return;
+            EllipseWindow ellipseWindow = new EllipseWindow(el.Width, el.Height,
+                (int) el.StrokeThickness, el.Fill.ToString(), el.Stroke.ToString());
+            ellipseWindow.ShowDialog();
+
+            if (!Ellipse.Condition) return;
+            for (int i = OnlyCanvas.Children.Count - 1; i >= 0; i--)
+            {
+                if (!(OnlyCanvas?.Children[i] is Ellipse)) continue;
+                if (!((Ellipse) OnlyCanvas.Children[i]).Name.Equals(el.Name)) continue;
+                ((Ellipse)OnlyCanvas.Children[i]).Fill = Ellipse.Fill;
+                ((Ellipse)OnlyCanvas.Children[i]).Stroke = Ellipse.Border;
+                ((Ellipse)OnlyCanvas.Children[i]).StrokeThickness = Ellipse.Conture;
+            }
+
+            foreach (var v in _drawnUIElements)
+            {
+                if (!(v is Ellipse ellipse)) continue;
+                if (!(ellipse.Name.Equals(el.Name))) continue;
+                ellipse.Fill = Ellipse.Fill;
+                ellipse.Stroke = Ellipse.Border;
+                ellipse.StrokeThickness = Ellipse.Conture;
+            }
         }
 
         #endregion
@@ -809,14 +838,14 @@ namespace Projekat
         #region PolygonWindow
 
         private void BtnPolygon_Checked(object sender, RoutedEventArgs e)
+    {
+        if (BtnEllipse.IsChecked == true || BtnText.IsChecked == true) BtnPolygon.IsChecked = false;
+        else
         {
-            if (BtnEllipse.IsChecked == true || BtnText.IsChecked == true) BtnPolygon.IsChecked = false;
-            else
-            {
-                _selectedShape = SelectedShape.Polygon;
-                _polygonPoints.Clear();
-            }
+            _selectedShape = SelectedShape.Polygon;
+            _polygonPoints.Clear();
         }
+    }
 
         private void BtnPolygon_Unchecked(object sender, RoutedEventArgs e)
         {
@@ -829,12 +858,15 @@ namespace Projekat
 
             Polygon polygon = new Polygon()
             {
+                Name = $"Polygon{_id++}",
                 Fill = Polygon.Fill,
                 Stroke = Polygon.Border,
                 StrokeThickness = Polygon.Conture
             };
 
             foreach (var p in _polygonPoints) polygon.Points.Add(p);
+
+            polygon.MouseLeftButtonDown += EditPolygon;
 
             OnlyCanvas.Children.Add(polygon);
 
@@ -843,9 +875,32 @@ namespace Projekat
             _selectedShape = SelectedShape.None;
 
             _drawnUIElements.Push(polygon);
+        }
 
-            //Dodaj posle za izmenu
-            //polygon.MouseLeftButtonDown += nekametoda
+        private void EditPolygon(object sender, MouseButtonEventArgs e)
+        {
+            if (!(e.Source is Polygon p)) return;
+            PolygonWindow polygonWindow = new PolygonWindow((int) p.StrokeThickness, p.Fill, p.Stroke);
+            polygonWindow.ShowDialog();
+
+            if (!Polygon.Condition) return;
+            for (int i = OnlyCanvas.Children.Count - 1; i >= 0; i--)
+            {
+                if (!(OnlyCanvas?.Children[i] is Polygon)) continue;
+                if (!((Polygon)OnlyCanvas.Children[i]).Name.Equals(p.Name)) continue;
+                ((Polygon)OnlyCanvas.Children[i]).Fill = Polygon.Fill;
+                ((Polygon)OnlyCanvas.Children[i]).Stroke = Polygon.Border;
+                ((Polygon)OnlyCanvas.Children[i]).StrokeThickness = Polygon.Conture;
+            }
+
+            foreach (var v in _drawnUIElements)
+            {
+                if (!(v is Polygon polygon)) continue;
+                if (!(polygon.Name.Equals(p.Name))) continue;
+                polygon.Fill = Polygon.Fill;
+                polygon.Stroke = Polygon.Border;
+                polygon.StrokeThickness = Polygon.Conture;
+            }
         }
 
         #endregion
@@ -873,26 +928,53 @@ namespace Projekat
 
             TextBox textBox = new TextBox()
             {
+                Name = $"Text{_id++}",
                 Text = Text.Text,
                 FontSize = Text.Font,
                 Foreground = Text.Foreground,
                 Background = Text.Background,
                 TextAlignment = TextAlignment.Center,
-                IsReadOnly = true
+                IsReadOnly = true,
+                Opacity = 99
             };
+
+            textBox.PreviewMouseLeftButtonDown += EditText;
 
             Canvas.SetTop(textBox, _curretnPoint.Y);
             Canvas.SetLeft(textBox, _curretnPoint.X);
 
             OnlyCanvas.Children.Add(textBox);
 
-            //Dodaj posle za izmenu
-            //textBox.MouseLeftButtonDown += nekametoda
-
             BtnText.IsChecked = false;
             _selectedShape = SelectedShape.None;
 
             _drawnUIElements.Push(textBox);
+        }
+
+        private void EditText(object sender, MouseButtonEventArgs e)
+        {
+            if (!(e.Source is TextBox t)) return;
+            TextWindow textWindow = new TextWindow(t.Text, t.FontSize, t.Foreground, t.Background);
+            textWindow.ShowDialog();
+
+            if (!Text.Condition) return;
+            for (int i = OnlyCanvas.Children.Count - 1; i >= 0; i--)
+            {
+                if (!(OnlyCanvas?.Children[i] is TextBox)) continue;
+                if (!((TextBox)OnlyCanvas.Children[i]).Name.Equals(t.Name)) continue;
+                ((TextBox)OnlyCanvas.Children[i]).FontSize = Text.Font;
+                ((TextBox)OnlyCanvas.Children[i]).Foreground = Text.Foreground;
+                ((TextBox)OnlyCanvas.Children[i]).Background = Text.Background;
+            }
+
+            foreach (var v in _drawnUIElements)
+            {
+                if (!(v is TextBox text)) continue;
+                if (!(text.Name.Equals(t.Name))) continue;
+                text.FontSize = Text.Font;
+                text.Foreground = Text.Foreground;
+                text.Background = Text.Background;
+            }
         }
 
         #endregion
