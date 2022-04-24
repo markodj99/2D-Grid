@@ -16,7 +16,6 @@ using Projekat.Utils.Enums;
 
 namespace Projekat
 {
-    //TODO: Da mogu da se izmene nacrtani objekti, eventualno tekst
     public partial class MainWindow : Window
     {
         #region Fields
@@ -812,7 +811,7 @@ namespace Projekat
             EllipseWindow ellipseWindow = new EllipseWindow(el.Width, el.Height,
                 (int) el.StrokeThickness, el.Fill.ToString(), el.Stroke.ToString());
             ellipseWindow.ShowDialog();
-
+                
             if (!Ellipse.Condition) return;
             for (int i = OnlyCanvas.Children.Count - 1; i >= 0; i--)
             {
@@ -880,7 +879,7 @@ namespace Projekat
         private void EditPolygon(object sender, MouseButtonEventArgs e)
         {
             if (!(e.Source is Polygon p)) return;
-            PolygonWindow polygonWindow = new PolygonWindow((int) p.StrokeThickness, p.Fill, p.Stroke);
+            PolygonWindow polygonWindow = new PolygonWindow((int) p.StrokeThickness, p.Fill.ToString(), p.Stroke.ToString());
             polygonWindow.ShowDialog();
 
             if (!Polygon.Condition) return;
@@ -954,7 +953,7 @@ namespace Projekat
         private void EditText(object sender, MouseButtonEventArgs e)
         {
             if (!(e.Source is TextBox t)) return;
-            TextWindow textWindow = new TextWindow(t.Text, t.FontSize, t.Foreground, t.Background);
+            TextWindow textWindow = new TextWindow(t.Text, t.FontSize, t.Foreground.ToString(), t.Background.ToString());
             textWindow.ShowDialog();
 
             if (!Text.Condition) return;

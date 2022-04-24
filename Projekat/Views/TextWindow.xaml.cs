@@ -30,16 +30,29 @@ namespace Projekat.Views
             Background.ItemsSource = typeof(Brushes).GetProperties();
         }
 
-        public TextWindow(string text, double font, Brush foreground, Brush background)
+        public TextWindow(string text, double font, string foreground, string background)
         {
             InitializeComponent();
             Foreground.ItemsSource = typeof(Brushes).GetProperties();
             Background.ItemsSource = typeof(Brushes).GetProperties();
 
             Text.Text = text;
+            Text.IsReadOnly = true;
+
             Font.Text = font.ToString();
+
             Foreground.Text = foreground.ToString();
             Background.Text = background.ToString();
+
+            BrushConverter converter = new BrushConverter();
+            var colors = (from p in typeof(Brushes).GetProperties()
+                select ((Brush)converter.ConvertFromString(p.Name))?.Clone().ToString()).ToList();
+
+            for (int i = 0; i < colors.Count; i++)
+            {
+                if (colors[i].Equals(foreground)) Foreground.SelectedItem = Foreground.Items[i];
+                if (colors[i].Equals(background)) Background.SelectedItem = Background.Items[i];
+            }
         }
 
 

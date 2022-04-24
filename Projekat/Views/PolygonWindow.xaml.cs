@@ -30,11 +30,23 @@ namespace Projekat.Views
             BorderColor.ItemsSource = typeof(Brushes).GetProperties();
         }
 
-        public PolygonWindow(int conture, Brush fill, Brush border)
+        public PolygonWindow(int conture, string fill, string border)
         {
             InitializeComponent();
             FillColor.ItemsSource = typeof(Brushes).GetProperties();
             BorderColor.ItemsSource = typeof(Brushes).GetProperties();
+
+            ContureLine.Text = conture.ToString();
+
+            BrushConverter converter = new BrushConverter();
+            var colors = (from p in typeof(Brushes).GetProperties()
+                select ((Brush)converter.ConvertFromString(p.Name))?.Clone().ToString()).ToList();
+
+            for (int i = 0; i < colors.Count; i++)
+            {
+                if (colors[i].Equals(fill)) FillColor.SelectedItem = FillColor.Items[i];
+                if (colors[i].Equals(border)) BorderColor.SelectedItem = BorderColor.Items[i];
+            }
         }
 
         private void Confirm_Click(object sender, RoutedEventArgs e)

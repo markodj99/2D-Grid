@@ -46,9 +46,14 @@ namespace Projekat.Views
             ContureLine.Text = conture.ToString();
 
             BrushConverter converter = new BrushConverter();
-            var s = (SolidColorBrush) new BrushConverter().ConvertFromString(fill);
-            FillColor.SelectedItem = s.Clone();
-            FillColor.SelectedValue = (Brush)converter.ConvertFromString(border);
+            var colors = (from p in typeof(Brushes).GetProperties()
+                select ((Brush)converter.ConvertFromString(p.Name))?.Clone().ToString()).ToList();
+
+            for (int i = 0; i < colors.Count; i++)
+            {
+                if (colors[i].Equals(fill)) FillColor.SelectedItem = FillColor.Items[i];
+                if (colors[i].Equals(border)) BorderColor.SelectedItem = BorderColor.Items[i];
+            }
         }
 
         private void Confirm_Click(object sender, RoutedEventArgs e)
